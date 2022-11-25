@@ -1,27 +1,41 @@
-﻿using System.Net;
+﻿using Spectre.Console;
+using TcpChat.Console;
 using TcpChat.Core;
-using TcpChat.Core.Contracts;
-using TcpChat.Core.Network;
+
+AnsiConsole.Clear();
+AnsiConsole.Write(
+    new FigletText("WELCOME TO TCP CHAT")
+        .Centered()
+        .Color(Color.Purple));
+
+var logger = new LogHandler();
+var handlers = new HandlersCollection();
+
+// handlers.Register("Message", new MessageHandler(logger));
+
+var executables = new IExecutable[]
+{
+    new HostingServerExecutable(logger, handlers),
+    new ConnectingToServerExecutable(logger)
+};
+
+var executable = AnsiConsole.Prompt(
+    new SelectionPrompt<IExecutable>()
+        .Title("What you [green]gonna do[/]?")
+        .UseConverter(exe => exe.RepresentationText)
+        .AddChoices(executables));
 
 var cts = new CancellationTokenSource();
 var token = cts.Token;
 
-// var ip = Dns.GetHostEntry(Dns.GetHostName()).AddressList;
-using var client = new ChatClient(IPAddress.Parse("127.0.0.1"), 7777);
-
-var handlers = new HandlersCollection();
-using var server = new ChatServer(new IPEndPoint(IPAddress.Any, 7777), handlers, token);
-
-var task = Task.Run(server.Run, token);
-
-client.Connect();
-
-Task.Delay(5000).ContinueWith(_ =>
+void ConsoleOnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs)
 {
     cts.Cancel();
-});
-// Task.Delay(6000).ContinueWith(_ => { client.Disconnect(); });
-task.ContinueWith(_ =>
-{
-    client.Send(new Packet());
-}).Wait();
+}
+
+Console.CancelKeyPress += ConsoleOnCancelKeyPress;
+
+executable.Configure();
+await executable.ExecuteAsync(token);
+
+Console.CancelKeyPress -= ConsoleOnCancelKeyPress;

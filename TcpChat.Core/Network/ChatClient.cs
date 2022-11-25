@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text.Json;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
+using TcpChat.Core.Interfaces;
 
 namespace TcpChat.Core.Network;
 
@@ -10,18 +11,17 @@ public class ChatClient : IDisposable
 {
     private readonly IPEndPoint _endPoint; 
     private readonly Socket _client;
+    private readonly ILogHandler _logger;
 
-    public ChatClient(IPAddress ip, int remotePort)
+    public ChatClient(IPAddress ip, int remotePort, ILogHandler logger)
     {
+        _logger = logger;
         _endPoint = new IPEndPoint(ip, remotePort);
         _client = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
     public void Connect()
     {
-        if (_client.Connected)
-            throw new ApplicationException("Chat Client is already connected");
-
         _client.Connect(_endPoint);
     }
 
