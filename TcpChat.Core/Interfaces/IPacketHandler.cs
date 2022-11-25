@@ -5,5 +5,5 @@ namespace TcpChat.Core.Interfaces;
 
 public interface IPacketHandler
 {
-    Task HandleAsync(Packet packet, TcpClient sender, CancellationToken ct);
+    Task HandleAsync(Packet packet, Socket sender, CancellationToken ct);
 }

@@ -2,18 +2,19 @@
 using System.Net.Sockets;
 using System.Text.Json;
 using TcpChat.Core.Contracts;
+using TcpChat.Core.Exceptions;
 
 namespace TcpChat.Core.Network;
 
-public class ChatClient
+public class ChatClient : IDisposable
 {
     private readonly IPEndPoint _endPoint; 
-    private readonly TcpClient _client;
+    private readonly Socket _client;
 
     public ChatClient(IPAddress ip, int remotePort)
     {
         _endPoint = new IPEndPoint(ip, remotePort);
-        _client = new TcpClient();
+        _client = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
     public void Connect()
@@ -36,7 +37,21 @@ public class ChatClient
     /// <returns>Response, it will not be null if server successfully handles it</returns>
     public Packet? Send(Packet packet)
     {
-        JsonSerializer.Serialize(_client.GetStream(), packet);
-        return JsonSerializer.Deserialize<Packet>(_client.GetStream());
+        try
+        {
+            var stream = new NetworkStream(_client);
+            JsonSerializer.Serialize(stream, packet);
+            return JsonSerializer.Deserialize<Packet>(stream);
+        }
+        catch
+        {
+            Disconnect();
+            throw new SocketDisconnectedException();
+        }
+    }
+
+    public void Dispose()
+    {
+       Disconnect();
     }
 }

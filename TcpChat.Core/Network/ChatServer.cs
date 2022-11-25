@@ -6,30 +6,36 @@ using TcpChat.Core.Interfaces;
 
 namespace TcpChat.Core.Network;
 
-public class ChatServer
+public class ChatServer : IDisposable
 {
     private readonly IHandlersCollection _handlers;
     private readonly CancellationToken _cancellationToken;
-    private readonly TcpListener _listener;
+    private readonly Socket _listener;
+    private readonly IPEndPoint _ipEndPoint;
+    private readonly List<Socket> _clients;
+    private readonly object _locker = new();
 
-    public ChatServer(IPAddress ip, int port, IHandlersCollection handlers, CancellationToken cancellationToken)
+    public ChatServer(IPEndPoint ipEndPoint, IHandlersCollection handlers, CancellationToken cancellationToken)
     {
+        _clients = new();
+        _ipEndPoint = ipEndPoint;
         _cancellationToken = cancellationToken;
         _handlers = handlers;
-        _listener = new TcpListener(ip, port);
+        _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
-    public void Start()
+    public async Task Run()
     {
         try
         {
-            _listener.Start(10);
+            _listener.Bind(_ipEndPoint);
+            _listener.Listen(100);
 
             Console.WriteLine("Server started");
 
             while (!_cancellationToken.IsCancellationRequested)
             {
-                var client = _listener.AcceptTcpClient();
+                var client = await _listener.AcceptAsync(_cancellationToken);
                 AcceptClient(client);
             }
         }
@@ -39,46 +45,73 @@ public class ChatServer
         }
         finally
         {
-            _listener.Stop();
+            _listener.Close();
             Console.WriteLine("Server stopped");
         }
     }
     
-    private void AcceptClient(TcpClient client)
+    private void AcceptClient(Socket client)
     {
-        Console.WriteLine($"Connection from {client.Client.RemoteEndPoint}");
-
+        Console.WriteLine($"Connection from {client.RemoteEndPoint}");
+        
+        lock (_locker)
+            _clients.Add(client);
+        
         Task.Run(() => ReceivePacketsAsync(client), _cancellationToken);
     }
 
-    private async void ReceivePacketsAsync(TcpClient tcpClient)
+    private async void ReceivePacketsAsync(Socket client)
     {   
         try
         {
             while (!_cancellationToken.IsCancellationRequested)
             {
-                var request = JsonSerializer.Deserialize<Packet>(tcpClient.GetStream());
+                var stream = new NetworkStream(client);
+                var request = await JsonSerializer.DeserializeAsync<Packet>(stream, cancellationToken: _cancellationToken);
 
                 if (request is null)
                     continue;
 
-                Console.WriteLine($"Received from {tcpClient.Client.RemoteEndPoint}");
+                Console.WriteLine($"Received from {client.RemoteEndPoint}");
 
                 var handler = _handlers.Resolve(request.Event);
 
                 if (handler is null)
+                {
+                    var packet = new Packet
+                    {
+                        Event = "Error",
+                        State = new { Message = $"Handler was not found for <{request.Event}> event." }
+                    };
+                    
+                    await JsonSerializer.SerializeAsync(stream, packet, cancellationToken: _cancellationToken);
                     continue;
+                }
 
-                await handler.HandleAsync(request, tcpClient, _cancellationToken);
+                await handler.HandleAsync(request, client, _cancellationToken);
             }
         }
         catch (Exception exception)
         {
-            Console.WriteLine($"Disconnected {tcpClient.Client.RemoteEndPoint}");
+            Console.WriteLine($"Disconnected {client.RemoteEndPoint}");
         }
         finally
         {
-            tcpClient.Close();
+            lock (_locker)
+                _clients.Remove(client);
+        }
+    }
+
+    public void Dispose()
+    {
+        _listener.Close();
+        
+        lock (_clients)
+        {
+            for (int i = 0; i < _clients.Count; i++)
+            {
+                _clients[i].Close();
+            }
         }
     }
 }
