@@ -1,7 +1,8 @@
 ﻿using System.Net;
 using Spectre.Console;
-using TcpChat.Core;
-using TcpChat.Core.Interfaces;
+using TcpChat.Core.Contracts;
+using TcpChat.Core.Handlers;
+using TcpChat.Core.Logging;
 using TcpChat.Core.Network;
 
 namespace TcpChat.Console;
@@ -12,13 +13,15 @@ public class HostingServerExecutable : IExecutable
 
     private readonly ILogHandler _logger;
     private readonly IHandlersCollection _handlers;
-    
+    private readonly IEncoder<Packet> _packetEncoder;
+
     private int? port;
     
-    public HostingServerExecutable(ILogHandler logger, IHandlersCollection handlers)
+    public HostingServerExecutable(ILogHandler logger, IHandlersCollection handlers, IEncoder<Packet> packetEncoder)
     {
         _logger = logger;
         _handlers = handlers;
+        _packetEncoder = packetEncoder;
     }
 
     public async Task ExecuteAsync(CancellationToken token)
@@ -26,9 +29,9 @@ public class HostingServerExecutable : IExecutable
         if (port is null)
             throw new ApplicationException("Executable is not configured");
 
-        using var server = new ChatServer(new IPEndPoint(IPAddress.Any, port.Value), _handlers, token, _logger);
+        using var server = new ChatServer(new IPEndPoint(IPAddress.Any, port.Value), _handlers, _logger, _packetEncoder);
 
-        var task = Task.Run(server.Run, token);
+        var task = Task.Run(() => server.RunAsync(token), token);
 
         await task.WaitAsync(token);
     }

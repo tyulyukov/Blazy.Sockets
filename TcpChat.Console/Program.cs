@@ -1,6 +1,6 @@
 ﻿using Spectre.Console;
 using TcpChat.Console;
-using TcpChat.Core;
+using TcpChat.Core.Handlers;
 
 AnsiConsole.Clear();
 AnsiConsole.Write(
@@ -10,13 +10,14 @@ AnsiConsole.Write(
 
 var logger = new LogHandler();
 var handlers = new HandlersCollection();
+var encoder = new JsonPacketEncoder();
 
-// handlers.Register("Message", new MessageHandler(logger));
+handlers.Register("Message", new MessageHandler(logger, encoder));
 
 var executables = new IExecutable[]
 {
-    new HostingServerExecutable(logger, handlers),
-    new ConnectingToServerExecutable(logger)
+    new HostingServerExecutable(logger, handlers, encoder),
+    new ConnectingToServerExecutable(logger, encoder)
 };
 
 var executable = AnsiConsole.Prompt(
@@ -25,7 +26,7 @@ var executable = AnsiConsole.Prompt(
         .UseConverter(exe => exe.RepresentationText)
         .AddChoices(executables));
 
-var cts = new CancellationTokenSource();
+using var cts = new CancellationTokenSource();
 var token = cts.Token;
 
 void ConsoleOnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs)

@@ -1,47 +1,63 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
-using TcpChat.Core.Interfaces;
+using TcpChat.Core.Handlers;
+using TcpChat.Core.Logging;
 
 namespace TcpChat.Core.Network;
 
-public class ChatClient : IDisposable
+public class ChatClient : INetworkClient
 {
     private readonly IPEndPoint _endPoint; 
     private readonly Socket _client;
     private readonly ILogHandler _logger;
+    private readonly IEncoder<Packet> _packetEncoder;
 
-    public ChatClient(IPAddress ip, int remotePort, ILogHandler logger)
+    public ChatClient(IPAddress ip, int remotePort, ILogHandler logger, IEncoder<Packet> packetEncoder)
     {
         _logger = logger;
+        _packetEncoder = packetEncoder;
         _endPoint = new IPEndPoint(ip, remotePort);
         _client = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
-    public void Connect()
+    public async Task ConnectAsync(CancellationToken ct)
     {
-        _client.Connect(_endPoint);
+        await _client.ConnectAsync(_endPoint, ct);
+        _logger.HandleText("Connected");
     }
 
     public void Disconnect()
     {
+        _client.Shutdown(SocketShutdown.Both);
         _client.Close();
+        _logger.HandleText("Disconnected");
     }
 
     /// <summary>
     /// Sends packet to the server
     /// </summary>
     /// <param name="packet">Request</param>
+    /// <param name="ct">Cancellation Token</param>
     /// <returns>Response, it will not be null if server successfully handles it</returns>
-    public Packet? Send(Packet packet)
+    public async Task<Packet?> SendAsync(Packet packet, CancellationToken ct)
     {
         try
         {
-            var stream = new NetworkStream(_client);
-            JsonSerializer.Serialize(stream, packet);
-            return JsonSerializer.Deserialize<Packet>(stream);
+            var request = _packetEncoder.Encode(packet);
+            _ = await _client.SendAsync(request, SocketFlags.None, ct);
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(TimeSpan.FromSeconds(1)); // TODO get this from configuration
+
+            var buffer = new byte[8192];
+            var received = await _client.ReceiveAsync(buffer, SocketFlags.None, cts.Token);
+            return _packetEncoder.Decode(buffer, received);
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
         }
         catch
         {

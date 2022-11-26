@@ -1,4 +1,4 @@
-﻿namespace TcpChat.Core.Interfaces;
+﻿namespace TcpChat.Core.Logging;
 
 public interface ILogHandler
 {

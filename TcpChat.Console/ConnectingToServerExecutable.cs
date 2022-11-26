@@ -1,7 +1,8 @@
 ﻿using System.Net;
 using Spectre.Console;
 using TcpChat.Core.Contracts;
-using TcpChat.Core.Interfaces;
+using TcpChat.Core.Handlers;
+using TcpChat.Core.Logging;
 using TcpChat.Core.Network;
 
 namespace TcpChat.Console;
@@ -11,31 +12,35 @@ public class ConnectingToServerExecutable : IExecutable
     public string RepresentationText => "Connect to the server";
 
     private readonly ILogHandler _logger;
+    private readonly IEncoder<Packet> _packetEncoder;
 
     private string? ip;
     private int? port;
     
-    public ConnectingToServerExecutable(ILogHandler logger)
+    public ConnectingToServerExecutable(ILogHandler logger, IEncoder<Packet> packetEncoder)
     {
         _logger = logger;
+        _packetEncoder = packetEncoder;
     }
 
-    public Task ExecuteAsync(CancellationToken token)
+    public async Task ExecuteAsync(CancellationToken token)
     {
         if (ip is null || port is null)
             throw new ApplicationException("Executable is not configured");
         
-        using var client = new ChatClient(IPAddress.Parse(ip), port.Value, _logger);
-        client.Connect();
+        using var client = new ChatClient(IPAddress.Parse(ip), port.Value, _logger, _packetEncoder);
+        await client.ConnectAsync(token);
 
         while (!token.IsCancellationRequested)
         {
             var message = AnsiConsole.Ask<string>("Send a [yellow]message[/]");
-            var response = client.Send(new Packet { Event = "Message", State = message });
-            _logger.HandleText((response is null).ToString());
+            var response = await client.SendAsync(new Packet { Event = "Message", State = message }, token);
+            
+            if (response is null)
+                _logger.HandleText("Without response");
+            else
+                _logger.HandleText("Response from server: " + response.State);
         }
-
-        return Task.CompletedTask;
     }
 
     public void Configure()

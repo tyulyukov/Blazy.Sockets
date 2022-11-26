@@ -1,5 +1,5 @@
 ﻿using Spectre.Console;
-using TcpChat.Core.Interfaces;
+using TcpChat.Core.Logging;
 
 namespace TcpChat.Console;
 
