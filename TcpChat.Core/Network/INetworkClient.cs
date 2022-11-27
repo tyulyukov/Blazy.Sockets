@@ -6,10 +6,7 @@ public interface INetworkClient : IDisposable
 {
     Task ConnectAsync(CancellationToken ct);
     void Disconnect();
+    Task SendRequestAsync(Packet packet, CancellationToken ct);
+    Task<Packet?> ReceiveResponseAsync(CancellationToken ct);
     Task<Packet?> SendAsync(Packet packet, CancellationToken ct);
-}
-
-public interface INetworkServer : IDisposable
-{
-    Task RunAsync(CancellationToken ct);
 }

@@ -16,10 +16,10 @@ public class MessageHandler : PacketHandler
     public override async Task HandleAsync(Packet packet, CancellationToken ct)
     {
         _logger.HandleText($"Message received from {Sender.RemoteEndPoint}: {packet.State}");
-        /*await SendResponseAsync(new Packet
+        await SendResponseAsync(new Packet
         {
             Event = packet.Event,
             State = $"This is your message: {packet.State}"
-        }, ct);*/
+        }, ct);
     }
 }

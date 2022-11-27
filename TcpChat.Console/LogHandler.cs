@@ -1,9 +1,9 @@
-﻿using Spectre.Console;
+using Spectre.Console;
 using TcpChat.Core.Logging;
 
 namespace TcpChat.Console;
 
-public class LogHandler : ILogHandler
+public class LogHandler : ILogHandler // TODO replace with ILogger
 {
     public void HandleText(string text)
     {

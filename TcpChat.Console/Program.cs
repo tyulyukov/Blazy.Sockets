@@ -13,11 +13,12 @@ var handlers = new HandlersCollection();
 var encoder = new JsonPacketEncoder();
 
 handlers.Register("Message", new MessageHandler(logger, encoder));
+handlers.Register("No Reply", new NoReplyHandler(logger, encoder));
 
 var executables = new IExecutable[]
 {
     new HostingServerExecutable(logger, handlers, encoder),
-    new ConnectingToServerExecutable(logger, encoder)
+    new ConnectingToServerExecutable(encoder)
 };
 
 var executable = AnsiConsole.Prompt(
@@ -36,7 +37,15 @@ void ConsoleOnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs)
 
 Console.CancelKeyPress += ConsoleOnCancelKeyPress;
 
-executable.Configure();
-await executable.ExecuteAsync(token);
+try
+{
+    executable.Configure();
+    await executable.ExecuteAsync(token);
+}
+catch (Exception exception)
+{
+    AnsiConsole.WriteException(exception);
+}
 
 Console.CancelKeyPress -= ConsoleOnCancelKeyPress;
+Console.ReadKey();

@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Spectre.Console;
 using TcpChat.Core.Contracts;
+using TcpChat.Core.Exceptions;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
 using TcpChat.Core.Network;
@@ -11,15 +12,13 @@ public class ConnectingToServerExecutable : IExecutable
 {
     public string RepresentationText => "Connect to the server";
 
-    private readonly ILogHandler _logger;
     private readonly IEncoder<Packet> _packetEncoder;
 
     private string? ip;
     private int? port;
     
-    public ConnectingToServerExecutable(ILogHandler logger, IEncoder<Packet> packetEncoder)
+    public ConnectingToServerExecutable(IEncoder<Packet> packetEncoder)
     {
-        _logger = logger;
         _packetEncoder = packetEncoder;
     }
 
@@ -28,18 +27,49 @@ public class ConnectingToServerExecutable : IExecutable
         if (ip is null || port is null)
             throw new ApplicationException("Executable is not configured");
         
-        using var client = new ChatClient(IPAddress.Parse(ip), port.Value, _logger, _packetEncoder);
-        await client.ConnectAsync(token);
+        using var client = new ChatClient(IPAddress.Parse(ip), port.Value, _packetEncoder);
+        await AnsiConsole.Status()
+            .Spinner(Spinner.Known.Aesthetic)
+            .StartAsync("Connecting", async ctx =>
+            {
+                await client.ConnectAsync(token);
+                AnsiConsole.WriteLine("Connected to the server");
+            });
 
-        while (!token.IsCancellationRequested)
+        try
         {
-            var message = AnsiConsole.Ask<string>("Send a [yellow]message[/]");
-            var response = await client.SendAsync(new Packet { Event = "Message", State = message }, token);
-            
-            if (response is null)
-                _logger.HandleText("Without response");
-            else
-                _logger.HandleText("Response from server: " + response.State);
+            while (!token.IsCancellationRequested)
+            {
+                var message = AnsiConsole.Ask<string>("Send a [yellow]message[/]");
+                await AnsiConsole.Status()
+                    .Spinner(Spinner.Known.SimpleDotsScrolling)
+                    .StartAsync("Sending message", async ctx =>
+                    {
+                        await client.SendRequestAsync(new Packet { Event = "Message", State = message }, token);
+                        AnsiConsole.WriteLine("Message sent successfully");
+
+                        ctx.Status("Receiving response");
+
+                        var response = await client.ReceiveResponseAsync(token);
+
+                        if (response is null)
+                            AnsiConsole.WriteLine("Without response");
+                        else
+                            AnsiConsole.WriteLine("Response from server: " + response.State);
+                    });
+            }
+        }
+        catch (SocketDisconnectedException exception)
+        {
+            AnsiConsole.WriteLine("Disconnected from server");
+        }
+        catch (Exception exception)
+        {
+            AnsiConsole.WriteException(exception);
+        }
+        finally
+        {
+            AnsiConsole.WriteLine("Execution stopped");
         }
     }
 

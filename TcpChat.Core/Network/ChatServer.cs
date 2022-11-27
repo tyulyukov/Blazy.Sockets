@@ -12,14 +12,14 @@ public class ChatServer : INetworkServer
     private readonly Socket _listener;
     private readonly IPEndPoint _ipEndPoint;
     private readonly List<Socket> _clients;
-    private readonly object _locker;
+    private readonly object _threadLocker;
     private readonly ILogHandler _logger;
     private readonly IEncoder<Packet> _packetEncoder;
 
     public ChatServer(IPEndPoint ipEndPoint, IHandlersCollection handlers, ILogHandler logger, IEncoder<Packet> packetEncoder)
     {
         _clients = new();
-        _locker = new();
+        _threadLocker = new();
         _ipEndPoint = ipEndPoint;
         _logger = logger;
         _packetEncoder = packetEncoder;
@@ -48,7 +48,6 @@ public class ChatServer : INetworkServer
         }
         finally
         {
-            _listener.Close();
             _logger.HandleText("Server stopped");
         }
     }
@@ -57,10 +56,10 @@ public class ChatServer : INetworkServer
     {
         _logger.HandleText($"Connection from {client.RemoteEndPoint}");
         
-        lock (_locker)
+        lock (_threadLocker)
             _clients.Add(client);
         
-        Task.Run(() => ReceivePacketsAsync(client, ct)); // TODO test passing cancellation token
+        Task.Run(() => ReceivePacketsAsync(client, ct), ct);
     }
 
     private async void ReceivePacketsAsync(Socket client, CancellationToken ct)
@@ -76,12 +75,15 @@ public class ChatServer : INetworkServer
                 if (request is null)
                     continue;
 
-                _logger.HandleText($"Received from {client.RemoteEndPoint}");
+                _logger.HandleText($"Incoming packet from {client.RemoteEndPoint}");
 
                 var handler = _handlers.Resolve(request.Event);
 
                 if (handler is null)
                 {
+                    var message = $"Handler was not found for {request.Event} event that sent by {client.RemoteEndPoint}.";
+                    _logger.HandleText(message);
+                    
                     var packet = new Packet
                     {
                         Event = "Error",
@@ -93,6 +95,8 @@ public class ChatServer : INetworkServer
                     continue;
                 }
 
+                _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
+                
                 handler.BeginSocketScope(client);
                 await handler.HandleAsync(request, ct);
                 handler.EndSocketScope();
@@ -104,7 +108,7 @@ public class ChatServer : INetworkServer
         }
         finally
         {
-            lock (_locker)
+            lock (_threadLocker)
                 _clients.Remove(client);
         }
     }

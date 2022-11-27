@@ -1,7 +1,7 @@
-﻿namespace TcpChat.Core.Logging;
+namespace TcpChat.Core.Logging;
 
 public interface ILogHandler
 {
-    void HandleText(string text);
+    void HandleText(string message);
     void HandleError(Exception exception);
 }
