@@ -1,5 +1,7 @@
 ﻿using Spectre.Console;
 using TcpChat.Console;
+using TcpChat.Console.Executables;
+using TcpChat.Console.Handlers;
 using TcpChat.Core.Handlers;
 
 AnsiConsole.Clear();

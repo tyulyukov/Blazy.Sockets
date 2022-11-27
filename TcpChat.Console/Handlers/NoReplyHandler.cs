@@ -2,7 +2,7 @@
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
 
-namespace TcpChat.Console;
+namespace TcpChat.Console.Handlers;
 
 public class NoReplyHandler : PacketHandler
 {

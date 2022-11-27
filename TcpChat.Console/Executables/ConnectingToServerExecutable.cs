@@ -3,10 +3,9 @@ using Spectre.Console;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
 using TcpChat.Core.Handlers;
-using TcpChat.Core.Logging;
 using TcpChat.Core.Network;
 
-namespace TcpChat.Console;
+namespace TcpChat.Console.Executables;
 
 public class ConnectingToServerExecutable : IExecutable
 {
