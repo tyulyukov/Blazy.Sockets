@@ -1,5 +1,4 @@
 ﻿using Spectre.Console;
-using TcpChat.Console;
 using TcpChat.Console.Executables;
 using TcpChat.Console.Handlers;
 using TcpChat.Core.Handlers;
@@ -8,7 +7,7 @@ AnsiConsole.Clear();
 AnsiConsole.Write(
     new FigletText("WELCOME TO TCP CHAT")
         .Centered()
-        .Color(Color.Purple));
+        .Color(Color.Teal));
 
 var logger = new LogHandler();
 var handlers = new HandlersCollection();
@@ -50,4 +49,3 @@ catch (Exception exception)
 }
 
 Console.CancelKeyPress -= ConsoleOnCancelKeyPress;
-Console.ReadKey();

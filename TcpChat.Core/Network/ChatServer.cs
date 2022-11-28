@@ -42,7 +42,7 @@ public class ChatServer : INetworkServer
                 AcceptClient(client, ct);
             }
         }
-        catch (Exception ex) when(ex is not OperationCanceledException)
+        catch (Exception ex) when(ex is not OperationCanceledException && ex is not TaskCanceledException)
         {
            _logger.HandleError(ex);
         }

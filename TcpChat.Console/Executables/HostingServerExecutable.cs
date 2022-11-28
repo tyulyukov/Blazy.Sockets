@@ -29,6 +29,8 @@ public class HostingServerExecutable : IExecutable
         if (port is null)
             throw new ApplicationException("Executable is not configured");
 
+        AnsiConsole.Write(new Rule("[yellow]Logs[/]").LeftJustified());
+        
         using var server = new ChatServer(new IPEndPoint(IPAddress.Any, port.Value), _handlers, _logger, _packetEncoder);
 
         var task = Task.Run(() => server.RunAsync(token), token);
@@ -38,6 +40,8 @@ public class HostingServerExecutable : IExecutable
 
     public void Configure()
     {
+        AnsiConsole.Write(new Rule("[yellow]Configuration[/]").LeftJustified());
+        
         port = AnsiConsole.Prompt(
             new TextPrompt<int>("Enter [green]port[/]")
                 .PromptStyle("green")

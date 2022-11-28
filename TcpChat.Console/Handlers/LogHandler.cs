@@ -7,7 +7,7 @@ public class LogHandler : ILogHandler // TODO replace with ILogger
 {
     public void HandleText(string text)
     {
-        AnsiConsole.MarkupLine(text);
+        AnsiConsole.WriteLine(DateTime.Now.ToString("[HH:mm:ss] ") + text);
     }
 
     public void HandleError(Exception exception)

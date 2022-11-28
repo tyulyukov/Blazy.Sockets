@@ -8,6 +8,8 @@ namespace TcpChat.Core.Network;
 
 public class ChatClient : INetworkClient
 {
+    public bool Connected => _client.Connected;
+    
     private readonly IPEndPoint _endPoint; 
     private readonly Socket _client;
     private readonly IEncoder<Packet> _packetEncoder;
