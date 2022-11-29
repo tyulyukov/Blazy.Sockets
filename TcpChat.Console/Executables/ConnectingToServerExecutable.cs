@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using Spectre.Console;
+using TcpChat.Console.Models;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
 using TcpChat.Core.Handlers;
@@ -45,17 +46,33 @@ public class ConnectingToServerExecutable : IExecutable
                 }
             });
 
+        // TODO enter username && validate if it has already taken or not
+        
         try
         {
+            // TODO choose whether to connect to chat or create your own
             while (!token.IsCancellationRequested && client.Connected)
             {
-                var message = AnsiConsole.Ask<string>("[blue]> Send a message[/]");
+                var chatName = AnsiConsole.Prompt(new TextPrompt<string>("Enter [green]chat name[/]").PromptStyle("green"));
+                
                 await AnsiConsole.Status()
                     .Spinner(Spinner.Known.SimpleDotsScrolling)
-                    .StartAsync("Sending message", async ctx =>
+                    .StartAsync("Creating chat", async ctx =>
                     {
-                        await client.SendRequestAsync(new Packet { Event = "Message", State = message }, token);
-                        AnsiConsole.WriteLine("Message sent successfully");
+                        await client.SendRequestAsync(new Packet
+                        {
+                            Event = "Create Chat", 
+                            State = new Chat
+                            {
+                                Name = chatName,
+                                Creator = new User()
+                                {
+                                    Name = "user123"
+                                },
+                                Users = new List<User>()
+                            }
+                        }, token);
+                        AnsiConsole.WriteLine("Request sent successfully");
 
                         ctx.Status("Receiving response");
 

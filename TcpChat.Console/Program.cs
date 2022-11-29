@@ -1,18 +1,21 @@
-﻿using Spectre.Console;
+﻿using HashidsNet;
+using Spectre.Console;
 using TcpChat.Console.Executables;
 using TcpChat.Console.Handlers;
+using TcpChat.Console.Services;
 using TcpChat.Core.Handlers;
 
 AnsiConsole.Clear();
 AnsiConsole.Write(
     new FigletText("WELCOME TO TCP CHAT")
         .Centered()
-        .Color(Color.Teal));
+        .Color(Color.Teal)); 
 
 var logger = new LogHandler();
 var handlers = new HandlersCollection();
 var encoder = new JsonPacketEncoder();
 
+handlers.Register("Create Chat", new CreateChatHandler(encoder, new ChatService(new Hashids()), logger));
 handlers.Register("Message", new MessageHandler(logger, encoder));
 handlers.Register("No Reply", new NoReplyHandler(logger, encoder));
 
