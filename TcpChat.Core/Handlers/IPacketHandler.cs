@@ -2,7 +2,9 @@ using TcpChat.Core.Contracts;
 
 namespace TcpChat.Core.Handlers;
 
-internal interface IPacketHandler
+public interface IPacketHandler
 {
-    Task HandleAsync(Packet packet, CancellationToken ct);
+    Task ExecuteAsync(object state, CancellationToken ct);
+    void BeginSocketScope(System.Net.Sockets.Socket socket);
+    void EndSocketScope();
 }

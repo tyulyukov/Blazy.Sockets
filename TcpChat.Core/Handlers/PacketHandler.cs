@@ -1,9 +1,10 @@
 ﻿using System.Net.Sockets;
+using System.Text.Json;
 using TcpChat.Core.Contracts;
 
 namespace TcpChat.Core.Handlers;
 
-public abstract class PacketHandler : IPacketHandler
+public abstract class PacketHandler<TRequest> : IPacketHandler
 {
     private readonly IEncoder<Packet> _packetEncoder;
     protected Socket Sender { get; private set; } = null!;
@@ -12,10 +13,31 @@ public abstract class PacketHandler : IPacketHandler
     {
         _packetEncoder = packetEncoder;
     }
-    
-    public abstract Task HandleAsync(Packet packet, CancellationToken ct);
 
-    public async Task SendResponseAsync(Packet response, CancellationToken ct)
+    public async Task ExecuteAsync(object state, CancellationToken ct)
+    {
+        var json = state.ToString();
+
+        if (json is null)
+        {
+            await SendErrorAsync("State is not provided", ct);
+            return;
+        }
+        
+        var request = JsonDocument.Parse(json).Deserialize<TRequest>();
+        
+        if (request is null)
+        {
+            await SendErrorAsync("Bad request", ct);
+            return;
+        }
+        
+        await HandleAsync(request, ct);
+    }
+    
+    public abstract Task HandleAsync(TRequest request, CancellationToken ct);
+
+    protected async Task SendResponseAsync(Packet response, CancellationToken ct)
     {
         if (Sender is null)
             throw new ApplicationException("Socket is not scoped");
@@ -24,7 +46,7 @@ public abstract class PacketHandler : IPacketHandler
         _ = await Sender.SendAsync(request, SocketFlags.None, ct);
     }
 
-    public async Task SendErrorAsync(string message, CancellationToken ct)
+    protected async Task SendErrorAsync(string message, CancellationToken ct)
     {
         if (Sender is null)
             throw new ApplicationException("Socket is not scoped");
@@ -39,12 +61,12 @@ public abstract class PacketHandler : IPacketHandler
         _ = await Sender.SendAsync(response, SocketFlags.None, ct);
     }
 
-    internal void BeginSocketScope(Socket socket)
+    public void BeginSocketScope(Socket socket)
     {
         Sender = socket;
     }
 
-    internal void EndSocketScope()
+    public void EndSocketScope()
     {
         Sender = null;
     }

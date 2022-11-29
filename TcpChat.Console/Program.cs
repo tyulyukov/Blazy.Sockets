@@ -15,9 +15,10 @@ var logger = new LogHandler();
 var handlers = new HandlersCollection();
 var encoder = new JsonPacketEncoder();
 
-handlers.Register("Create Chat", new CreateChatHandler(encoder, new ChatService(new Hashids()), logger));
-handlers.Register("Message", new MessageHandler(logger, encoder));
-handlers.Register("No Reply", new NoReplyHandler(logger, encoder));
+var hashids = new Hashids("drip too hard", 5);
+
+handlers.Register("Create Chat", new CreateChatHandler(encoder, new ChatService(hashids), logger));
+handlers.Register("Auth", new AuthHandler(logger, encoder));
 
 var executables = new IExecutable[]
 {

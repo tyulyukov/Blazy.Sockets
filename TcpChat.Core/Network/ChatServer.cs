@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
@@ -82,23 +83,22 @@ public class ChatServer : INetworkServer
                 if (handler is null)
                 {
                     var message = $"Handler was not found for {request.Event} event that sent by {client.RemoteEndPoint}.";
-                    _logger.HandleText(message);
-                    
-                    var packet = new Packet
-                    {
-                        Event = "Error",
-                        State = new { Message = $"Handler was not found for {request.Event} event." }
-                    };
-
-                    var response = _packetEncoder.Encode(packet);
-                    _ = await client.SendAsync(response, SocketFlags.None, ct);
+                    await SendErrorAsync(client, message, ct);
                     continue;
                 }
-
-                _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
                 
+                /*var state = handler.ParseJsonRequest(request.State.ToString() ?? string.Empty);
+                if (state is null)
+                {
+                    var message = $"Bad request for {request.Event} event that sent by {client.RemoteEndPoint}.";
+                    await SendErrorAsync(client, message, ct);
+                    continue;
+                }*/
+                
+                _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
+
                 handler.BeginSocketScope(client);
-                await handler.HandleAsync(request, ct);
+                await handler.ExecuteAsync(request.State, ct);
                 handler.EndSocketScope();
             }
         }
@@ -113,6 +113,20 @@ public class ChatServer : INetworkServer
         }
     }
 
+    private async Task SendErrorAsync(Socket client, string message, CancellationToken ct)
+    {
+        _logger.HandleText(message);
+                    
+        var packet = new Packet
+        {
+            Event = "Error",
+            State = new { Message = message }
+        };
+
+        var response = _packetEncoder.Encode(packet);
+        _ = await client.SendAsync(response, SocketFlags.None, ct);
+    }
+    
     public void Dispose()
     {
         lock (_clients)

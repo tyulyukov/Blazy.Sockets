@@ -2,14 +2,14 @@ namespace TcpChat.Core.Handlers;
 
 public class HandlersCollection : IHandlersCollection
 {
-    private readonly Dictionary<string, PacketHandler> _handlers;
+    private readonly Dictionary<string, IPacketHandler> _handlers;
 
     public HandlersCollection()
     {
         _handlers = new();
     }
 
-    public void Register(string eventName, PacketHandler handler)
+    public void Register(string eventName, IPacketHandler handler)
     {
         if (_handlers.ContainsKey(eventName))
             throw new ApplicationException($"Event handler with event name {eventName} already exists");
@@ -17,7 +17,7 @@ public class HandlersCollection : IHandlersCollection
         _handlers.Add(eventName, handler);
     }
     
-    public PacketHandler? Resolve(string eventName)
+    public IPacketHandler? Resolve(string eventName)
     {
         _handlers.TryGetValue(eventName, out var handler);
         return handler;

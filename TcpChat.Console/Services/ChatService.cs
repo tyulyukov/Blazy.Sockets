@@ -1,29 +1,27 @@
-﻿using HashidsNet;
+﻿using System.Collections.Concurrent;
+using HashidsNet;
+using TcpChat.Console.Domain;
 using TcpChat.Console.Models;
 
 namespace TcpChat.Console.Services;
 
 public class ChatService : IChatService
 {
-    private readonly Dictionary<int, Chat?> _chats; // TODO in-memory database instead of this sh1t
+    private readonly ConcurrentDictionary<int, Chat> _chats; // TODO in-memory database instead of this sh1t
     private readonly Hashids _hashids;
-    
-    private int _lastId;
+    private readonly AutoIncrement _id;
 
     public ChatService(Hashids hashids)
     {
         _hashids = hashids;
+        _id = new();
         _chats = new();
     }
 
-    public string CreateChat(Chat? chat)
+    public string? CreateChat(Chat chat)
     {
-        var id = _lastId;
-        _chats.Add(id, chat);
-
-        _lastId++;
-
-        return _hashids.Encode(id);
+        var id = _id.Value;
+        return !_chats.TryAdd(id, chat) ? null : _hashids.Encode(id);
     }
 
     public bool DeleteChat(string id, User user)
@@ -32,7 +30,7 @@ public class ChatService : IChatService
         if (!_chats.TryGetValue(key, out var chat))
             return false;
 
-        return chat.Creator.Name == user.Name && _chats.Remove(key);
+        return chat.Creator.Name == user.Name && _chats.TryRemove(key, out _);
     }
     
     public bool JoinChat(string id, User user)
@@ -70,9 +68,6 @@ public class ChatService : IChatService
             break;
         }
 
-        if (userToDelete is null)
-            return false;
-            
-        return chat.Users.Remove(userToDelete);
+        return userToDelete is not null && chat.Users.Remove(userToDelete);
     }
 }
