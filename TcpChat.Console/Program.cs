@@ -18,7 +18,7 @@ var encoder = new JsonPacketEncoder();
 var hashids = new Hashids("drip too hard", 5);
 
 handlers.Register("Create Chat", new CreateChatHandler(encoder, new ChatService(hashids), logger));
-handlers.Register("Auth", new AuthHandler(logger, encoder));
+handlers.Register("Auth", new AuthHandler(logger, encoder, new AuthService()));
 
 var executables = new IExecutable[]
 {
