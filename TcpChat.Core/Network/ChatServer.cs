@@ -99,11 +99,14 @@ public class ChatServer : INetworkServer
                     continue;
                 }
                 
+                // and here
                 // _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
 
                 handler.BeginSocketScope(client);
                 await handler.ExecuteAsync(request.State, ct);
                 handler.EndSocketScope();
+                
+                // and maybe here
             }
         }
         catch (Exception exception)
@@ -123,6 +126,8 @@ public class ChatServer : INetworkServer
         }
         finally
         {
+            client.Close();
+            
             lock (_threadLocker)
                 _clients.Remove(client);
         }
