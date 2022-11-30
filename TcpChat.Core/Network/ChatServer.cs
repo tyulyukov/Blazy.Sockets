@@ -66,9 +66,7 @@ public class ChatServer : INetworkServer
 
         if (handler is not null)
         {
-            handler.BeginSocketScope(client);
-            await handler.HandleAsync(connectionDetails, ct);
-            handler.EndSocketScope();
+            await handler.ExecuteAsync(connectionDetails, client, ct);
         }
         
         _ = Task.Run(() => ReceivePacketsAsync(client, connectionDetails, ct), ct);
@@ -102,9 +100,7 @@ public class ChatServer : INetworkServer
                 // and here
                 // _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
 
-                handler.BeginSocketScope(client);
-                await handler.ExecuteAsync(request.State, ct);
-                handler.EndSocketScope();
+                await handler.ExecuteAsync(request.State, client, ct);
                 
                 // and maybe here
             }
@@ -115,13 +111,11 @@ public class ChatServer : INetworkServer
 
             if (handler is not null)
             {
-                handler.BeginSocketScope(client);
-                await handler.HandleAsync(new DisconnectionDetails
+                await handler.ExecuteAsync(new DisconnectionDetails
                 {
                     DisconnectedAt = DateTime.Now,
                     ConnectionTime = DateTime.Now - connectionDetails.ConnectedAt
-                }, ct);
-                handler.EndSocketScope();
+                }, client, ct);
             }
         }
         finally

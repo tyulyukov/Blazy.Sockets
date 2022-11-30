@@ -7,7 +7,7 @@ using TcpChat.Core.Network;
 
 namespace TcpChat.Console.Executables;
 
-public class HostingServerExecutable : IExecutable
+public class HostingServerExecutable : IConfigurableExecutable
 {
     public string RepresentationText => "Host a server";
 
@@ -33,9 +33,7 @@ public class HostingServerExecutable : IExecutable
         
         using var server = new ChatServer(new IPEndPoint(IPAddress.Any, port.Value), _handlers, _logger, _packetEncoder);
 
-        var task = Task.Run(() => server.RunAsync(token), token);
-
-        await task.WaitAsync(token);
+        await server.RunAsync(token);
     }
 
     public void Configure()

@@ -5,17 +5,18 @@ using TcpChat.Console.Handlers;
 using TcpChat.Console.Services;
 using TcpChat.Core.Handlers;
 
-AnsiConsole.Clear();
-AnsiConsole.Write(
-    new FigletText("WELCOME TO TCP CHAT")
-        .Centered()
-        .Color(Color.Teal)); 
-
 var logger = new LogHandler();
 var handlers = new HandlersCollection();
 var encoder = new JsonPacketEncoder();
 
-var hashids = new Hashids("drip too hard", 5);
+char GetRandomLetter()
+{
+    const string chars = "$%#@!*abcdefghijklmnopqrstuvwxyz1234567890?;:ABCDEFGHIJKLMNOPQRSTUVWXYZ^&";
+    var num = Random.Shared.Next(0, chars.Length);
+    return chars[num];
+}
+
+var hashids = new Hashids(Enumerable.Range(0, 10).Select(_ => GetRandomLetter()).ToString(), 5);
 
 var chatService = new ChatService(hashids);
 var authService = new AuthService(); 
@@ -31,12 +32,6 @@ var executables = new IExecutable[]
     new ConnectingToServerExecutable(encoder)
 };
 
-var executable = AnsiConsole.Prompt(
-    new SelectionPrompt<IExecutable>()
-        .Title("What you [green]gonna do[/]?")
-        .UseConverter(exe => exe.RepresentationText)
-        .AddChoices(executables));
-
 using var cts = new CancellationTokenSource();
 var token = cts.Token;
 
@@ -47,14 +42,36 @@ void ConsoleOnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs)
 
 Console.CancelKeyPress += ConsoleOnCancelKeyPress;
 
-try
+while (!token.IsCancellationRequested)
 {
-    executable.Configure();
-    await executable.ExecuteAsync(token);
-}
-catch (Exception exception)
-{
-    AnsiConsole.WriteException(exception);
+    try
+    {
+        AnsiConsole.Clear();
+        AnsiConsole.Write(
+            new FigletText("WELCOME TO TCP CHAT")
+                .Centered()
+                .Color(Color.Teal));
+
+        var executable = AnsiConsole.Prompt(
+            new SelectionPrompt<IExecutable>()
+                .Title("What you [green]gonna do[/]?")
+                .UseConverter(exe => exe.RepresentationText)
+                .AddChoices(executables));
+
+        if (executable is IConfigurableExecutable exe)
+            exe.Configure();
+
+        await executable.ExecuteAsync(token);
+    }
+    catch (Exception exception)
+    {
+        AnsiConsole.WriteException(exception);
+    }
+    finally
+    {
+        if (!AnsiConsole.Confirm("Do you wanna [green]restart[/]?"))
+            cts.Cancel();
+    }
 }
 
 Console.CancelKeyPress -= ConsoleOnCancelKeyPress;

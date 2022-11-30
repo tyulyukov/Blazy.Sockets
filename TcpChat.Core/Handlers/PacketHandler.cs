@@ -4,7 +4,7 @@ using TcpChat.Core.Contracts;
 
 namespace TcpChat.Core.Handlers;
 
-public abstract class PacketHandler<TRequest> : IPacketHandler
+public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : notnull, new()
 {
     private readonly IEncoder<Packet> _packetEncoder;
     protected Socket Sender { get; private set; } = null!;
@@ -14,8 +14,10 @@ public abstract class PacketHandler<TRequest> : IPacketHandler
         _packetEncoder = packetEncoder;
     }
 
-    public async Task ExecuteAsync(object state, CancellationToken ct)
+    public async Task ExecuteAsync(object state, Socket sender, CancellationToken ct)
     {
+        Sender = sender;
+        
         var json = state.ToString();
 
         if (json is null)
@@ -33,11 +35,18 @@ public abstract class PacketHandler<TRequest> : IPacketHandler
         }
         
         await HandleAsync(request, ct);
+
+        Sender = null;
     }
 
     public abstract Task HandleAsync(TRequest request, CancellationToken ct);
     
     protected async Task SendResponseAsync(Packet response, CancellationToken ct)
+    {
+        await SendResponseAsync(Sender, response, ct);
+    }
+    
+    protected async Task SendResponseAsync(Socket client, Packet response, CancellationToken ct)
     {
         if (Sender is null)
             throw new ApplicationException("Socket is not scoped");
@@ -59,15 +68,5 @@ public abstract class PacketHandler<TRequest> : IPacketHandler
 
         var response = _packetEncoder.Encode(packet);
         _ = await Sender.SendAsync(response, SocketFlags.None, ct);
-    }
-
-    public void BeginSocketScope(Socket socket)
-    {
-        Sender = socket;
-    }
-
-    public void EndSocketScope()
-    {
-        Sender = null;
     }
 }

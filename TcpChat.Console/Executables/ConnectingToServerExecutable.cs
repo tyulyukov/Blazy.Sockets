@@ -1,7 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using Spectre.Console;
-using TcpChat.Console.Models;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
 using TcpChat.Core.Handlers;
@@ -9,14 +8,14 @@ using TcpChat.Core.Network;
 
 namespace TcpChat.Console.Executables;
 
-public class ConnectingToServerExecutable : IExecutable
+public class ConnectingToServerExecutable : IConfigurableExecutable
 {
     public string RepresentationText => "Connect to the server";
 
     private readonly IEncoder<Packet> _packetEncoder;
 
-    private string? ip;
-    private int? port;
+    private string? _ip;
+    private int? _port;
     
     public ConnectingToServerExecutable(IEncoder<Packet> packetEncoder)
     {
@@ -25,12 +24,12 @@ public class ConnectingToServerExecutable : IExecutable
 
     public async Task ExecuteAsync(CancellationToken token)
     {
-        if (ip is null || port is null)
+        if (_ip is null || _port is null)
             throw new ApplicationException("Executable is not configured");
         
         AnsiConsole.Write(new Rule("[yellow]Chat[/]").LeftJustified());
         
-        using var client = new ChatClient(IPAddress.Parse(ip), port.Value, _packetEncoder);
+        using var client = new ChatClient(IPAddress.Parse(_ip), _port.Value, _packetEncoder);
         await AnsiConsole.Status()
             .Spinner(Spinner.Known.Aesthetic)
             .StartAsync("Connecting", async ctx =>
@@ -42,69 +41,66 @@ public class ConnectingToServerExecutable : IExecutable
                 }
                 catch (SocketException exception)
                 {
-                    AnsiConsole.WriteLine("An error has occurred while connecting with server");
+                    AnsiConsole.WriteLine("An [red]error[/] has occurred while connecting with server");
                 }
             });
 
+        if (token.IsCancellationRequested || !client.Connected)
+            return;
+        
         try
         {
-            var username = AnsiConsole.Prompt(new TextPrompt<string>("Enter [green]username[/]").PromptStyle("green"));
-            var resp = await client.SendAsync(new Packet
-            {
-                Event = "Auth",
-                State = new
-                {
-                    Username = username
-                }
-            }, token);
-            
-            if (resp is null)
-                AnsiConsole.WriteLine("Without response");
-            else
-                AnsiConsole.WriteLine("Response from server: " + resp.State);
-            
-            // TODO choose whether to connect to chat or create your own
+            var username = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter [green]username[/]")
+                    .PromptStyle("green"));
+
             while (!token.IsCancellationRequested && client.Connected)
             {
-                var chatName = AnsiConsole.Prompt(new TextPrompt<string>("Enter [green]chat name[/]").PromptStyle("green"));
+                try
+                {
+                    if (await AuthenticateAsync(client, username, token))
+                        break;
                 
-                await AnsiConsole.Status()
-                    .Spinner(Spinner.Known.SimpleDotsScrolling)
-                    .StartAsync("Creating chat", async ctx =>
-                    {
-                        await client.SendRequestAsync(new Packet
-                        {
-                            Event = "Create Chat", 
-                            State = new Chat
-                            {
-                                Name = chatName,
-                                Creator = new User()
-                                {
-                                    Name = "user123"
-                                },
-                                Users = new List<User>()
-                            }
-                        }, token);
-                        AnsiConsole.WriteLine("Request sent successfully");
+                    username = AnsiConsole.Prompt(
+                        new TextPrompt<string>($"Username {username} is [red]already taken[/]. Try [green]another one[/]")
+                            .PromptStyle("green"));
+                }
+                catch (Exception exception)
+                {
+                    AnsiConsole.WriteException(exception);
+                }
+            }
+            
+            var executables = new IExecutable[]
+            {
+                new ConnectToChatExecutable(), 
+                new CreateMyChatExecutable(client)
+            };
 
-                        ctx.Status("Receiving response");
+            while (!token.IsCancellationRequested && client.Connected)
+            {
+                try
+                {
+                    var executable = AnsiConsole.Prompt(
+                        new SelectionPrompt<IExecutable>()
+                            .Title("What dou you wanna [green]start with[/]?")
+                            .UseConverter(exe => exe.RepresentationText)
+                            .AddChoices(executables));
 
-                        var response = await client.ReceiveResponseAsync(token);
-
-                        if (response is null)
-                            AnsiConsole.WriteLine("Without response");
-                        else
-                            AnsiConsole.WriteLine("Response from server: " + response.State);
-                    });
+                    if (executable is IConfigurableExecutable configurableExe)
+                        configurableExe.Configure();
+            
+                    await executable.ExecuteAsync(token);
+                }
+                catch (Exception exception)
+                {
+                    AnsiConsole.WriteException(exception);
+                }
             }
         }
         catch (SocketDisconnectedException exception)
         {
             AnsiConsole.WriteLine("Disconnected from server");
-        }
-        catch (Exception exception)
-        {
-            AnsiConsole.WriteException(exception);
         }
         finally
         {
@@ -116,13 +112,13 @@ public class ConnectingToServerExecutable : IExecutable
     {
         AnsiConsole.Write(new Rule("[yellow]Setup[/]").LeftJustified());
         
-        ip = AnsiConsole.Prompt(
-            new TextPrompt<string>("Enter [green]ip address[/] of the server u wanna connect to")
+        _ip = AnsiConsole.Prompt(
+            new TextPrompt<string>("Enter [green]ip address[/] of the server")
                 .PromptStyle("green")
                 .ValidationErrorMessage("[red]That's not a valid ip address[/]")
                 .Validate(str => IPAddress.TryParse(str, out _) ? ValidationResult.Success() : ValidationResult.Error()));
         
-        port = AnsiConsole.Prompt(
+        _port = AnsiConsole.Prompt(
             new TextPrompt<int>("Enter [green]port[/]")
                 .PromptStyle("green")
                 .ValidationErrorMessage("[red]That's not a valid port[/]")
@@ -134,5 +130,19 @@ public class ConnectingToServerExecutable : IExecutable
                         _ => ValidationResult.Error(),
                     };
                 }));
+    }
+
+    private async Task<bool> AuthenticateAsync(INetworkClient client, string username, CancellationToken ct)
+    {
+        var resp = await client.SendAsync(new Packet
+        {
+            Event = "Auth",
+            State = new
+            {
+                Username = username
+            }
+        }, ct);
+
+        return resp is not null && resp.Event == "Authenticated";
     }
 }

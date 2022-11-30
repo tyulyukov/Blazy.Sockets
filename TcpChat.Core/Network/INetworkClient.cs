@@ -4,6 +4,8 @@ namespace TcpChat.Core.Network;
 
 public interface INetworkClient : IDisposable
 {
+    bool Connected { get; }
+    
     Task ConnectAsync(CancellationToken ct);
     void Disconnect();
     Task SendRequestAsync(Packet packet, CancellationToken ct);
