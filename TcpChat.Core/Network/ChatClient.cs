@@ -34,20 +34,8 @@ public class ChatClient : INetworkClient
 
     public async Task<Packet?> SendAsync(Packet packet, CancellationToken ct)
     {
-        try
-        {
-            await SendRequestAsync(packet, ct);
-            return await ReceiveResponseAsync(ct);
-        }
-        catch (OperationCanceledException)
-        {
-            return null;
-        }
-        catch
-        {
-            Disconnect();
-            throw new SocketDisconnectedException("Client socket disconnected");
-        }
+        await SendRequestAsync(packet, ct);
+        return await ReceiveResponseAsync(ct);
     }
 
     public async Task SendRequestAsync(Packet packet, CancellationToken ct)

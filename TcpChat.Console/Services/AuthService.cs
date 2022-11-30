@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Net.Sockets;
 using TcpChat.Console.Models;
 
 namespace TcpChat.Console.Services;
@@ -22,5 +23,18 @@ public class AuthService : IAuthService
     public bool LogOut(string userName)
     {
         return _users.TryRemove(userName, out _);
+    }
+
+    public User? FindBySocket(Socket socket)
+    {
+        try
+        {
+            var keyValuePair = _users.FirstOrDefault(u => u.Value.Socket == socket);
+            return keyValuePair.Value;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

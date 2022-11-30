@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using TcpChat.Console.Dto;
 using TcpChat.Console.Models;
 using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;
@@ -7,7 +8,7 @@ using TcpChat.Core.Logging;
 
 namespace TcpChat.Console.Handlers;
 
-public class AuthHandler : PacketHandler<string>
+public class AuthHandler : PacketHandler<AuthRequest>
 {
     private readonly ILogHandler _logger;
     private readonly IAuthService _authService;
@@ -18,11 +19,11 @@ public class AuthHandler : PacketHandler<string>
         _authService = authService;
     }
 
-    public override async Task HandleAsync(string request, CancellationToken ct)
+    public override async Task HandleAsync(AuthRequest request, CancellationToken ct)
     {
         var user = new User
         {
-            Name = request,
+            Name = request.Username,
             Socket = Sender
         };
 

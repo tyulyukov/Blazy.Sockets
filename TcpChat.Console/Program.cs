@@ -17,10 +17,13 @@ var encoder = new JsonPacketEncoder();
 
 var hashids = new Hashids("drip too hard", 5);
 
-handlers.Register("Create Chat", new CreateChatHandler(encoder, new ChatService(hashids), logger));
-handlers.Register("Auth", new AuthHandler(logger, encoder, new AuthService()));
+var chatService = new ChatService(hashids);
+var authService = new AuthService(); 
+
+handlers.Register("Create Chat", new CreateChatHandler(encoder, chatService, logger));
+handlers.Register("Auth", new AuthHandler(logger, encoder, authService));
 handlers.RegisterConnectionHandler(new ConnectionHandler(encoder, logger));
-handlers.RegisterDisconnectionHandler(new DisconnectionHandler(encoder, logger));
+handlers.RegisterDisconnectionHandler(new DisconnectionHandler(encoder, logger, authService));
 
 var executables = new IExecutable[]
 {

@@ -46,10 +46,23 @@ public class ConnectingToServerExecutable : IExecutable
                 }
             });
 
-        // TODO enter username && validate if it has already taken or not
-        
         try
         {
+            var username = AnsiConsole.Prompt(new TextPrompt<string>("Enter [green]username[/]").PromptStyle("green"));
+            var resp = await client.SendAsync(new Packet
+            {
+                Event = "Auth",
+                State = new
+                {
+                    Username = username
+                }
+            }, token);
+            
+            if (resp is null)
+                AnsiConsole.WriteLine("Without response");
+            else
+                AnsiConsole.WriteLine("Response from server: " + resp.State);
+            
             // TODO choose whether to connect to chat or create your own
             while (!token.IsCancellationRequested && client.Connected)
             {
