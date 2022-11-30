@@ -66,7 +66,7 @@ public class ChatServer : INetworkServer
 
         if (handler is not null)
         {
-            await handler.ExecuteAsync(connectionDetails, client, ct);
+            await handler.HandleWithScopedSocketAsync(client, connectionDetails, ct);
         }
         
         _ = Task.Run(() => ReceivePacketsAsync(client, connectionDetails, ct), ct);
@@ -111,11 +111,11 @@ public class ChatServer : INetworkServer
 
             if (handler is not null)
             {
-                await handler.ExecuteAsync(new DisconnectionDetails
+                await handler.HandleWithScopedSocketAsync(client, new DisconnectionDetails
                 {
                     DisconnectedAt = DateTime.Now,
                     ConnectionTime = DateTime.Now - connectionDetails.ConnectedAt
-                }, client, ct);
+                }, ct);
             }
         }
         finally

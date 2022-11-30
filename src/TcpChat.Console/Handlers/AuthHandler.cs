@@ -1,5 +1,4 @@
-﻿using System.Net;
-using TcpChat.Console.Dto;
+﻿using TcpChat.Console.Dto;
 using TcpChat.Console.Models;
 using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;

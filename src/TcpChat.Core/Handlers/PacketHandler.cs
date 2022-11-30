@@ -16,8 +16,6 @@ public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : 
 
     public async Task ExecuteAsync(object state, Socket sender, CancellationToken ct)
     {
-        Sender = sender;
-        
         var json = state.ToString();
 
         if (json is null)
@@ -25,7 +23,7 @@ public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : 
             await SendErrorAsync("State is not provided", ct);
             return;
         }
-        
+
         var request = JsonDocument.Parse(json).Deserialize<TRequest>();
         
         if (request is null)
@@ -34,9 +32,7 @@ public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : 
             return;
         }
         
-        await HandleAsync(request, ct);
-
-        Sender = null;
+        await HandleWithScopedSocketAsync(sender, request, ct);
     }
 
     public abstract Task HandleAsync(TRequest request, CancellationToken ct);
@@ -68,5 +64,12 @@ public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : 
 
         var response = _packetEncoder.Encode(packet);
         _ = await Sender.SendAsync(response, SocketFlags.None, ct);
+    }
+
+    public async Task HandleWithScopedSocketAsync(Socket sender, TRequest request, CancellationToken ct)
+    {
+        Sender = sender;
+        await HandleAsync(request, ct);
+        Sender = null;
     }
 }

@@ -1,6 +1,4 @@
-﻿using TcpChat.Console.Models;
-using TcpChat.Console.Services;
-using TcpChat.Core.Contracts;
+﻿using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
 
