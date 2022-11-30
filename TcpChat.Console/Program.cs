@@ -19,6 +19,8 @@ var hashids = new Hashids("drip too hard", 5);
 
 handlers.Register("Create Chat", new CreateChatHandler(encoder, new ChatService(hashids), logger));
 handlers.Register("Auth", new AuthHandler(logger, encoder, new AuthService()));
+handlers.RegisterConnectionHandler(new ConnectionHandler(encoder, logger));
+handlers.RegisterDisconnectionHandler(new DisconnectionHandler(encoder, logger));
 
 var executables = new IExecutable[]
 {

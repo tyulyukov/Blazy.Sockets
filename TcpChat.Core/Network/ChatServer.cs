@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
@@ -40,7 +39,7 @@ public class ChatServer : INetworkServer
             while (!ct.IsCancellationRequested)
             {
                 var client = await _listener.AcceptAsync(ct);
-                AcceptClient(client, ct);
+                await AcceptClientAsync(client, DateTime.Now, ct);
             }
         }
         catch (Exception ex) when(ex is not OperationCanceledException && ex is not TaskCanceledException)
@@ -53,17 +52,29 @@ public class ChatServer : INetworkServer
         }
     }
     
-    private void AcceptClient(Socket client, CancellationToken ct)
+    private async Task AcceptClientAsync(Socket client, DateTime connectedAt, CancellationToken ct)
     {
-        _logger.HandleText($"Connection from {client.RemoteEndPoint}");
+        var connectionDetails = new ConnectionDetails()
+        {
+            ConnectedAt = connectedAt
+        };
         
         lock (_threadLocker)
             _clients.Add(client);
         
-        Task.Run(() => ReceivePacketsAsync(client, ct), ct);
+        var handler = _handlers.ResolveConnectionHandler();
+
+        if (handler is not null)
+        {
+            handler.BeginSocketScope(client);
+            await handler.HandleAsync(connectionDetails, ct);
+            handler.EndSocketScope();
+        }
+        
+        _ = Task.Run(() => ReceivePacketsAsync(client, connectionDetails, ct), ct);
     }
 
-    private async void ReceivePacketsAsync(Socket client, CancellationToken ct)
+    private async void ReceivePacketsAsync(Socket client, ConnectionDetails connectionDetails, CancellationToken ct)
     {   
         try
         {
@@ -76,26 +87,19 @@ public class ChatServer : INetworkServer
                 if (request is null)
                     continue;
 
-                _logger.HandleText($"Incoming packet from {client.RemoteEndPoint}");
+                // TODO middlewares here
+                // _logger.HandleText($"Incoming packet from {client.RemoteEndPoint}");
 
                 var handler = _handlers.Resolve(request.Event);
 
                 if (handler is null)
                 {
-                    var message = $"Handler was not found for {request.Event} event that sent by {client.RemoteEndPoint}.";
+                    var message = $"Handler was not found for {request.Event} event";
                     await SendErrorAsync(client, message, ct);
                     continue;
                 }
                 
-                /*var state = handler.ParseJsonRequest(request.State.ToString() ?? string.Empty);
-                if (state is null)
-                {
-                    var message = $"Bad request for {request.Event} event that sent by {client.RemoteEndPoint}.";
-                    await SendErrorAsync(client, message, ct);
-                    continue;
-                }*/
-                
-                _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
+                // _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
 
                 handler.BeginSocketScope(client);
                 await handler.ExecuteAsync(request.State, ct);
@@ -104,7 +108,18 @@ public class ChatServer : INetworkServer
         }
         catch (Exception exception)
         {
-            _logger.HandleText($"Disconnected {client.RemoteEndPoint}");
+            var handler = _handlers.ResolveDisconnectionHandler();
+
+            if (handler is not null)
+            {
+                handler.BeginSocketScope(client);
+                await handler.HandleAsync(new DisconnectionDetails
+                {
+                    DisconnectedAt = DateTime.Now,
+                    ConnectionTime = DateTime.Now - connectionDetails.ConnectedAt
+                }, ct);
+                handler.EndSocketScope();
+            }
         }
         finally
         {
@@ -129,7 +144,7 @@ public class ChatServer : INetworkServer
     
     public void Dispose()
     {
-        lock (_clients)
+        lock (_threadLocker)
         {
             for (int i = 0; i < _clients.Count; i++)
             {

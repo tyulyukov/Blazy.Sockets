@@ -34,9 +34,9 @@ public abstract class PacketHandler<TRequest> : IPacketHandler
         
         await HandleAsync(request, ct);
     }
-    
-    public abstract Task HandleAsync(TRequest request, CancellationToken ct);
 
+    public abstract Task HandleAsync(TRequest request, CancellationToken ct);
+    
     protected async Task SendResponseAsync(Packet response, CancellationToken ct)
     {
         if (Sender is null)
