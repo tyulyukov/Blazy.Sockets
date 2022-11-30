@@ -9,9 +9,9 @@ How ridiculous it is, but i still cant send messages in my sample xD.
 
 > 🚧 Project is still in progress... (ofc you can fork this project and build your sample)
 
-![Main menu](docs/assets/1.png)
-![Client](docs/assets/2.png)
-![Server](docs/assets/3.png)
+![Main menu](https://github.com/tyulyukov/TcpChat/blob/master/docs/assets/1.png)
+![Client](https://github.com/tyulyukov/TcpChat/blob/master/docs/assets/2.png)
+![Server](https://github.com/tyulyukov/TcpChat/blob/master/docs/assets/3.png)
 
 ## Small example of TcpChat.Core:
 
