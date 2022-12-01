@@ -15,7 +15,7 @@ public class HostingServerExecutable : IConfigurableExecutable
     private readonly IHandlersCollection _handlers;
     private readonly IEncoder<Packet> _packetEncoder;
 
-    private int? port;
+    private int? _port;
     
     public HostingServerExecutable(ILogHandler logger, IHandlersCollection handlers, IEncoder<Packet> packetEncoder)
     {
@@ -26,12 +26,13 @@ public class HostingServerExecutable : IConfigurableExecutable
 
     public async Task ExecuteAsync(CancellationToken token)
     {
-        if (port is null)
+        if (_port is null)
             throw new ApplicationException("Executable is not configured");
 
         AnsiConsole.Write(new Rule("[yellow]Logs[/]").LeftJustified());
-        
-        using var server = new ChatServer(new IPEndPoint(IPAddress.Any, port.Value), _handlers, _logger, _packetEncoder);
+
+        using var socketAcceptor = new SocketAcceptor(_handlers, _packetEncoder, _logger);
+        using var server = new ChatServer(new IPEndPoint(IPAddress.Any, _port.Value), socketAcceptor, _logger);
 
         await server.RunAsync(token);
     }
@@ -40,7 +41,7 @@ public class HostingServerExecutable : IConfigurableExecutable
     {
         AnsiConsole.Write(new Rule("[yellow]Configuration[/]").LeftJustified());
         
-        port = AnsiConsole.Prompt(
+        _port = AnsiConsole.Prompt(
             new TextPrompt<int>("Enter [green]port[/]")
                 .PromptStyle("green")
                 .ValidationErrorMessage("[red]That's not a valid port[/]")
