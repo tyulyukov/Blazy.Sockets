@@ -11,7 +11,7 @@ var encoder = new JsonPacketEncoder();
 
 char GetRandomLetter()
 {
-    const string chars = "$%#@!*abcdefghijklmnopqrstuvwxyz1234567890?;:ABCDEFGHIJKLMNOPQRSTUVWXYZ^&";
+    const string chars = "$%#@!*;:?^&abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     var num = Random.Shared.Next(0, chars.Length);
     return chars[num];
 }
