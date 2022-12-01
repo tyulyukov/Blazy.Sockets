@@ -37,11 +37,11 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
                 try
                 {
                     await client.ConnectAsync(token);
-                    AnsiConsole.WriteLine("Connected to the server");
+                    AnsiConsole.MarkupLine("Connected to the server");
                 }
                 catch (SocketException exception)
                 {
-                    AnsiConsole.WriteLine("An [red]error[/] has occurred while connecting with server");
+                    AnsiConsole.MarkupLine("An [red]error[/] has occurred while connecting with server");
                 }
             });
 
@@ -134,7 +134,7 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
 
     private async Task<bool> AuthenticateAsync(INetworkClient client, string username, CancellationToken ct)
     {
-        var resp = await client.SendAsync(new Packet
+        var response = await client.SendAsync(new Packet
         {
             Event = "Auth",
             State = new
@@ -143,6 +143,6 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
             }
         }, ct);
 
-        return resp is not null && resp.Event == "Authenticated";
+        return response is not null && response.Event == "Authenticated";
     }
 }
