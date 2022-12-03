@@ -22,7 +22,7 @@ public class CreateMyChatExecutable : IExecutable
         
         var chatName = AnsiConsole.Prompt(new TextPrompt<string>("Enter [green]chat name[/]").PromptStyle("green"));
 
-        bool chatCreated = false;
+        Packet? response = null;
         
         await AnsiConsole.Status()
             .Spinner(Spinner.Known.SimpleDotsScrolling)
@@ -44,24 +44,18 @@ public class CreateMyChatExecutable : IExecutable
 
                 ctx.Status("Receiving response");
 
-                var response = await _client.ReceiveResponseAsync(token);
-
-                if (response is not null && response.Event == "Chat Created")
-                {
-                    AnsiConsole.MarkupLine($"Chat {chatName} created with id [yellow]{response.State}[/]");
-                    AnsiConsole.MarkupLine("[grey]Share this id to chat with someone[/]");
-                    chatCreated = true;
-                }
-                else
-                {
-                    AnsiConsole.MarkupLine("An [red]error[/] has occurred while creating chat");
-                    chatCreated = false;
-                }
+                response = await _client.ReceiveResponseAsync(token);
             });
-        
-        if (!chatCreated)
+
+        if (response is null || response.Event != "Chat Created" || response.State.ToString() is null)
+        {
+            AnsiConsole.MarkupLine("An [red]error[/] has occurred while creating chat");
             return;
-        
-        // handling messages
+        }
+
+        AnsiConsole.MarkupLine($"Chat {chatName} created with id [yellow]{response.State}[/]");
+        AnsiConsole.MarkupLine("[grey]Share this id to chat with someone[/]");
+
+        await new ChatExecutable(response.State.ToString()!).ExecuteAsync(token);
     }
 }
