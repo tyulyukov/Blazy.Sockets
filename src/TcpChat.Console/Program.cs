@@ -22,14 +22,16 @@ var chatService = new ChatService(hashids);
 var authService = new AuthService(); 
 
 handlers.Register("Create Chat", new CreateChatHandler(encoder, chatService, logger));
+handlers.Register("Connect To Chat", new ConnectToChatHandler(encoder, authService, chatService, logger));
 handlers.Register("Auth", new AuthHandler(logger, encoder, authService));
+handlers.Register("Message", new SendMessageHandler(encoder, authService, chatService, logger));
 handlers.RegisterConnectionHandler(new ConnectionHandler(encoder, logger));
 handlers.RegisterDisconnectionHandler(new DisconnectionHandler(encoder, logger, authService));
 
 var executables = new IExecutable[]
 {
     new HostingServerExecutable(logger, handlers, encoder),
-    new ConnectingToServerExecutable(encoder)
+    new ConnectingToServerExecutable(encoder, new ServerCommandParserService())
 };
 
 using var cts = new CancellationTokenSource();

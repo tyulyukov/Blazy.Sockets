@@ -59,7 +59,7 @@ public class ChatClient : INetworkClient
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromSeconds(1)); // TODO get this from configuration
 
-            var buffer = new byte[8192];
+            var buffer = new byte[1024];
             var received = await _client.ReceiveAsync(buffer, SocketFlags.None, cts.Token);
             return _packetEncoder.Decode(buffer, received);
         }

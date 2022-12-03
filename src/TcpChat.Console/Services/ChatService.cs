@@ -24,18 +24,23 @@ public class ChatService : IChatService
         return !_chats.TryAdd(id, chat) ? null : _hashids.Encode(id);
     }
 
-    public bool DeleteChat(string id, User user)
+    public bool DeleteChat(string hashId, User user)
     {
-        var key = _hashids.Decode(id)[0];
+        if (!_hashids.TryDecodeSingle(hashId, out var key))
+            return false;
+        
         if (!_chats.TryGetValue(key, out var chat))
             return false;
 
         return chat.Creator.Name == user.Name && _chats.TryRemove(key, out _);
     }
     
-    public bool JoinChat(string id, User user)
+    public bool JoinChat(string hashId, User user)
     {
-        if (!_chats.TryGetValue(_hashids.Decode(id)[0], out var chat))
+        if (!_hashids.TryDecodeSingle(hashId, out var id))
+            return false;
+        
+        if (!_chats.TryGetValue(id, out var chat))
             return false;
         
         chat.Users.Add(user);
@@ -43,14 +48,19 @@ public class ChatService : IChatService
         return true;
     }
 
-    public bool LeaveChat(string id, User user)
+    public bool LeaveChat(string hashId, User user)
     {
-        return _chats.TryGetValue(_hashids.Decode(id)[0], out var chat) && chat.Users.Remove(user);
+        if (!_hashids.TryDecodeSingle(hashId, out var id))
+            return false;
+        
+        return _chats.TryGetValue(id, out var chat) && chat.Users.Remove(user);
     }
 
-    public bool KickUserFromChat(string id, string userName, User user)
+    public bool KickUserFromChat(string hashId, string userName, User user)
     {
-        var key = _hashids.Decode(id)[0];
+        if (!_hashids.TryDecodeSingle(hashId, out var key))
+            return false;
+        
         if (!_chats.TryGetValue(key, out var chat))
             return false;
 
@@ -69,5 +79,15 @@ public class ChatService : IChatService
         }
 
         return userToDelete is not null && chat.Users.Remove(userToDelete);
+    }
+
+    public User[] GetUsersFromChat(string hashId, Func<User, bool> predicate)
+    {
+        if (!_hashids.TryDecodeSingle(hashId, out var chatId))
+            return Array.Empty<User>();
+        
+        return !_chats.TryGetValue(chatId, out var chat) 
+            ? Array.Empty<User>() 
+            : chat.Users.Where(predicate).ToArray();
     }
 }

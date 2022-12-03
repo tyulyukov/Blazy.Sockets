@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using Spectre.Console;
+using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
 using TcpChat.Core.Handlers;
@@ -13,13 +14,15 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
     public string RepresentationText => "Connect to the server";
 
     private readonly IEncoder<Packet> _packetEncoder;
+    private readonly IServerCommandParserService _commandParserService;
 
     private string? _ip;
     private int? _port;
     
-    public ConnectingToServerExecutable(IEncoder<Packet> packetEncoder)
+    public ConnectingToServerExecutable(IEncoder<Packet> packetEncoder, IServerCommandParserService commandParserService)
     {
         _packetEncoder = packetEncoder;
+        _commandParserService = commandParserService;
     }
 
     public async Task ExecuteAsync(CancellationToken token)
@@ -73,8 +76,8 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
             
             var executables = new IExecutable[]
             {
-                new ConnectToChatExecutable(), 
-                new CreateMyChatExecutable(client)
+                new ConnectToChatExecutable(client, _commandParserService), 
+                new CreateMyChatExecutable(client, _commandParserService)
             };
 
             while (!token.IsCancellationRequested && client.Connected)
