@@ -24,6 +24,9 @@ public class ConnectToChatExecutable : IConfigurableExecutable
     {
         if (_chatId is null)
             throw new ApplicationException("Executable is not configured");
+        
+        if (token.IsCancellationRequested)
+            return;
 
         var response = await _client.SendAsync(new Packet
         {
@@ -34,9 +37,15 @@ public class ConnectToChatExecutable : IConfigurableExecutable
             }
         }, token);
 
-        if (response is null || response.Event != "Connected To Chat")
+        if (response is null)
         {
             AnsiConsole.MarkupLine("An [red]error[/] occurred during connecting to chat");
+            return;
+        }
+
+        if (response.Event != "Connected To Chat")
+        {
+            AnsiConsole.MarkupLine($"Chat with id [yellow]{_chatId}[/] [red]does not exist[/]");
             return;
         }
         

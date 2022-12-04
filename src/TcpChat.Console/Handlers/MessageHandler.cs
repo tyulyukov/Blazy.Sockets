@@ -39,7 +39,7 @@ public class SendMessageHandler : PacketHandler<SendMessageRequest>
                 Event = "Message",
                 State = new
                 {
-                    From = user.Name,
+                    From = sender.Name,
                     request.Chat,
                     request.Message
                 }

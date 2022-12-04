@@ -1,6 +1,7 @@
 using Spectre.Console;
 using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;
+using TcpChat.Core.Exceptions;
 using TcpChat.Core.Network;
 
 namespace TcpChat.Console.Executables;
@@ -22,57 +23,69 @@ public class ChatExecutable : IExecutable
     
     public Task ExecuteAsync(CancellationToken token)
     {
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        using var scopedCts = new CancellationTokenSource();
 
-        var receiveMessagesTask = ReceiveMessagesAsync(cts.Token);
-        var sendMessagesTask = SendMessagesAsync(cts);
+        var receiveMessagesTask = ReceiveMessagesAsync(scopedCts.Token);
+        var sendMessagesTask = SendMessagesAsync(scopedCts);
 
-        Task.WaitAll(new[] { receiveMessagesTask, sendMessagesTask }, cts.Token);
+        Task.WaitAll(new[] { receiveMessagesTask, sendMessagesTask }, token);
         return Task.CompletedTask;
     }
 
     private async Task ReceiveMessagesAsync(CancellationToken ct)
     {
-        while (!ct.IsCancellationRequested)
+        try
         {
-            // TODO implement asynchronous receiver with handlers in Core
-            var packet = await _client.ReceiveResponseAsync(ct);
-
-            if (packet is not null)
+            while (!ct.IsCancellationRequested)
             {
-                AnsiConsole.WriteLine($"Incoming packet {packet.State}");
+                // TODO implement asynchronous receiver with handlers in Core
+                var packet = await _client.ReceiveResponseAsync(ct);
+
+                if (packet is not null)
+                {
+                    AnsiConsole.WriteLine($"Incoming packet {packet.State}");
+                }
             }
         }
+        catch (SocketDisconnectedException) { }
     }
 
     private async Task SendMessagesAsync(CancellationTokenSource cts)
     {
-        while (!cts.IsCancellationRequested)
+        try
         {
-            var message = AnsiConsole.Prompt(new TextPrompt<string>(">").PromptStyle("yellow"));
+            while (!cts.IsCancellationRequested)
+            {
+                var message = AnsiConsole.Prompt(
+                    new TextPrompt<string>(">")
+                        .PromptStyle("yellow")
+                        .Validate(str => str.Length <= 128)
+                        .ValidationErrorMessage("nah bro its [red]too long[/]"));
 
-            // this will be in parser or smth similar
-            if (message.Trim() == "/leave")
-            {
-                cts.Cancel();
-                return;
-            }
-            
-            if (_commandParserService.TryParse(message, out _))
-            {
-                // Do smth with the command
-                continue;
-            }
-            
-            await _client.SendAsync(new Packet
-            {
-                Event = "Message",
-                State = new
+                // this will be in parser or smth similar
+                if (message.Trim() == "/leave")
                 {
-                    Chat = _chatId,
-                    Message = message
+                    cts.Cancel();
+                    return;
                 }
-            }, cts.Token);
+
+                if (_commandParserService.TryParse(message, out _))
+                {
+                    // Do smth with the command
+                    continue;
+                }
+
+                await _client.SendRequestAsync(new Packet
+                {
+                    Event = "Message",
+                    State = new
+                    {
+                        Chat = _chatId,
+                        Message = message
+                    }
+                }, cts.Token);
+            }
         }
+        catch (SocketDisconnectedException) { }
     }
 }

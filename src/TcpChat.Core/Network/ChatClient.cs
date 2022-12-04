@@ -32,6 +32,12 @@ public class ChatClient : INetworkClient
             _client.Shutdown(SocketShutdown.Both);
     }
 
+    public async Task<Packet?> SendWithTimeOutAsync(Packet packet, TimeSpan timeout, CancellationToken ct)
+    {
+        await SendRequestAsync(packet, ct);
+        return await ReceiveResponseWithTimeOutAsync(timeout, ct);
+    }
+    
     public async Task<Packet?> SendAsync(Packet packet, CancellationToken ct)
     {
         await SendRequestAsync(packet, ct);
@@ -52,6 +58,28 @@ public class ChatClient : INetworkClient
         }
     }
 
+    public async Task<Packet?> ReceiveResponseWithTimeOutAsync(TimeSpan timeout, CancellationToken ct)
+    {
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(timeout);
+
+            var buffer = new byte[1024];
+            var received = await _client.ReceiveAsync(buffer, SocketFlags.None, cts.Token);
+            return _packetEncoder.Decode(buffer, received);
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch
+        {
+            Disconnect();
+            throw new SocketDisconnectedException("Server socket disconnected");
+        }
+    }
+    
     public async Task<Packet?> ReceiveResponseAsync(CancellationToken ct)
     {
         try

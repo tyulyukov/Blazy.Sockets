@@ -20,7 +20,7 @@ public class CreateMyChatExecutable : IExecutable
     
     public async Task ExecuteAsync(CancellationToken token)
     {
-        if (token.IsCancellationRequested || !_client.Connected)
+        if (token.IsCancellationRequested)
             return;
         
         var chatName = AnsiConsole.Prompt(new TextPrompt<string>("Enter [green]chat name[/]").PromptStyle("green"));

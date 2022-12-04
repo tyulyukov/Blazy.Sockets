@@ -44,11 +44,8 @@ public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : 
     
     protected async Task SendResponseAsync(Socket client, Packet response, CancellationToken ct)
     {
-        if (Sender is null)
-            throw new ApplicationException("Socket is not scoped");
-        
         var request = _packetEncoder.Encode(response);
-        _ = await Sender.SendAsync(request, SocketFlags.None, ct);
+        _ = await client.SendAsync(request, SocketFlags.None, ct);
     }
 
     protected async Task SendErrorAsync(string message, CancellationToken ct)

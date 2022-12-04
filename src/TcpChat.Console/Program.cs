@@ -9,19 +9,12 @@ var logger = new LogHandler();
 var handlers = new HandlersCollection();
 var encoder = new JsonPacketEncoder();
 
-char GetRandomLetter()
-{
-    const string chars = "$%#@!*;:?^&abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    var num = Random.Shared.Next(0, chars.Length);
-    return chars[num];
-}
-
-var hashids = new Hashids(Enumerable.Range(0, 10).Select(_ => GetRandomLetter()).ToString(), 5);
+var hashids = new Hashids(DateTime.UtcNow.ToString(), 5);
 
 var chatService = new ChatService(hashids);
 var authService = new AuthService(); 
 
-handlers.Register("Create Chat", new CreateChatHandler(encoder, chatService, logger));
+handlers.Register("Create Chat", new CreateChatHandler(encoder, chatService, authService, logger));
 handlers.Register("Connect To Chat", new ConnectToChatHandler(encoder, authService, chatService, logger));
 handlers.Register("Auth", new AuthHandler(logger, encoder, authService));
 handlers.Register("Message", new SendMessageHandler(encoder, authService, chatService, logger));

@@ -8,7 +8,12 @@ public interface INetworkClient : IDisposable
     
     Task ConnectAsync(CancellationToken ct);
     void Disconnect();
-    Task SendRequestAsync(Packet packet, CancellationToken ct);
-    Task<Packet?> ReceiveResponseAsync(CancellationToken ct);
+    
+    Task<Packet?> SendWithTimeOutAsync(Packet packet, TimeSpan timeout, CancellationToken ct);
     Task<Packet?> SendAsync(Packet packet, CancellationToken ct);
+    
+    Task SendRequestAsync(Packet packet, CancellationToken ct);
+    
+    Task<Packet?> ReceiveResponseWithTimeOutAsync(TimeSpan timeout, CancellationToken ct);
+    Task<Packet?> ReceiveResponseAsync(CancellationToken ct);
 }

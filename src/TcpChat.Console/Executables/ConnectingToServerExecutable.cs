@@ -57,16 +57,21 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
                 new TextPrompt<string>("Enter [green]username[/]")
                     .PromptStyle("green"));
 
-            while (!token.IsCancellationRequested && client.Connected)
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
                     if (await AuthenticateAsync(client, username, token))
                         break;
-                
+
                     username = AnsiConsole.Prompt(
-                        new TextPrompt<string>($"Username {username} is [red]already taken[/]. Try [green]another one[/]")
+                        new TextPrompt<string>(
+                                $"Username {username} is [red]already taken[/]. Try [green]another one[/]")
                             .PromptStyle("green"));
+                }
+                catch (SocketDisconnectedException)
+                {
+                    throw;
                 }
                 catch (Exception exception)
                 {
@@ -80,7 +85,7 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
                 new CreateMyChatExecutable(client, _commandParserService)
             };
 
-            while (!token.IsCancellationRequested && client.Connected)
+            while (!token.IsCancellationRequested)
             {
                 try
                 {
@@ -92,8 +97,12 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
 
                     if (executable is IConfigurableExecutable configurableExe)
                         configurableExe.Configure();
-            
+
                     await executable.ExecuteAsync(token);
+                }
+                catch (SocketDisconnectedException)
+                {
+                    throw;
                 }
                 catch (Exception exception)
                 {
@@ -118,6 +127,7 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
         _ip = AnsiConsole.Prompt(
             new TextPrompt<string>("Enter [green]ip address[/] of the server")
                 .PromptStyle("green")
+                .DefaultValue("127.0.0.1")
                 .ValidationErrorMessage("[red]That's not a valid ip address[/]")
                 .Validate(str => IPAddress.TryParse(str, out _) ? ValidationResult.Success() : ValidationResult.Error()));
         
