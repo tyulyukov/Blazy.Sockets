@@ -1,11 +1,12 @@
 ﻿using System.Net;
 using Spectre.Console;
+using TcpChat.Console.Domain;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
 using TcpChat.Core.Network;
 
-namespace TcpChat.Console.Executables;
+namespace TcpChat.Console.Executables.Server;
 
 public class HostingServerExecutable : IConfigurableExecutable
 {

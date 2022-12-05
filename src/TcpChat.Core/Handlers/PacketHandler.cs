@@ -16,14 +16,7 @@ public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : 
 
     public async Task ExecuteAsync(object state, Socket sender, CancellationToken ct)
     {
-        var json = state.ToString();
-
-        if (json is null)
-        {
-            await SendErrorAsync("State is not provided", ct);
-            return;
-        }
-
+        var json = JsonSerializer.Serialize(state);
         var request = JsonDocument.Parse(json).Deserialize<TRequest>();
         
         if (request is null)

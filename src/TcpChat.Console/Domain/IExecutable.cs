@@ -1,4 +1,4 @@
-﻿namespace TcpChat.Console.Executables;
+﻿namespace TcpChat.Console.Domain;
 
 public interface IExecutable
 {

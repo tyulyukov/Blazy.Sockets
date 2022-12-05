@@ -8,8 +8,9 @@ public class JsonPacketEncoder : IEncoder<Packet>
 {
     public byte[] Encode(Packet value)
     {
-        var requestJson = JsonSerializer.Serialize(value);
-        return Encoding.UTF8.GetBytes(requestJson);
+        // value.State = JsonSerializer.Deserialize<object>(JsonSerializer.Serialize(value.State)) ?? throw new InvalidOperationException();
+        var json = JsonSerializer.Serialize(value);
+        return Encoding.UTF8.GetBytes(json);
     }
 
     public Packet? Decode(byte[] buffer, int length)

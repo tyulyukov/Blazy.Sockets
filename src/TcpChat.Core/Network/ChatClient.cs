@@ -84,16 +84,9 @@ public class ChatClient : INetworkClient
     {
         try
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.CancelAfter(TimeSpan.FromSeconds(1)); // TODO get this from configuration
-
             var buffer = new byte[1024];
-            var received = await _client.ReceiveAsync(buffer, SocketFlags.None, cts.Token);
+            var received = await _client.ReceiveAsync(buffer, SocketFlags.None, ct);
             return _packetEncoder.Decode(buffer, received);
-        }
-        catch (OperationCanceledException)
-        {
-            return null;
         }
         catch
         {

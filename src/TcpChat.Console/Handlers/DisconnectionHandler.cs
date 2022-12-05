@@ -9,11 +9,13 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
 {
     private readonly ILogHandler _logger;
     private readonly IAuthService _authService;
+    private readonly IChatService _chatService;
 
-    public DisconnectionHandler(IEncoder<Packet> packetEncoder, ILogHandler logger, IAuthService authService) : base(packetEncoder)
+    public DisconnectionHandler(IEncoder<Packet> packetEncoder, ILogHandler logger, IAuthService authService, IChatService chatService) : base(packetEncoder)
     {
         _logger = logger;
         _authService = authService;
+        _chatService = chatService;
     }
 
     public override Task HandleAsync(DisconnectionDetails details, CancellationToken ct)
@@ -23,11 +25,21 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
         if (user is not null)
         {
             _authService.LogOut(user.Name);
-            _logger.HandleText($"Disconnected user {user.Name} - {Sender.RemoteEndPoint} Connection Elapsed: {details.ConnectionTime}");
+            
+            var leftChats = _chatService.LeaveAllChats(user);
+            
+            if (leftChats.Count == 0)
+                _logger.HandleText($"{user.Name} was not connected to any chat disconnection");
+            else if (leftChats.Count == 1)
+                _logger.HandleText($"{user.Name} left {leftChats[0].Name} chat due to disconnection");
+            else if (leftChats.Count > 1)
+                _logger.HandleText($"{user.Name} left {leftChats.Count} chats due to disconnection");
+            
+            _logger.HandleText($"Disconnected user {user.Name} Connection Elapsed: {details.ConnectionTime}");
         }
         else
         {
-            _logger.HandleText($"Disconnected anonymous {Sender.RemoteEndPoint} Connection Elapsed: {details.ConnectionTime}");
+            _logger.HandleText($"Disconnected {Sender.RemoteEndPoint} Connection Elapsed: {details.ConnectionTime}");
         }
 
         return Task.CompletedTask;

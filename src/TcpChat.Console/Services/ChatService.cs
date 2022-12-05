@@ -35,17 +35,17 @@ public class ChatService : IChatService
         return chat.Creator.Name == user.Name && _chats.TryRemove(key, out _);
     }
     
-    public bool JoinChat(string hashId, User user)
+    public Chat? JoinChat(string hashId, User user)
     {
         if (!_hashids.TryDecodeSingle(hashId, out var id))
-            return false;
+            return null;
         
         if (!_chats.TryGetValue(id, out var chat))
-            return false;
+            return null;
         
         chat.Users.Add(user);
         
-        return true;
+        return chat;
     }
 
     public bool LeaveChat(string hashId, User user)
@@ -54,6 +54,16 @@ public class ChatService : IChatService
             return false;
         
         return _chats.TryGetValue(id, out var chat) && chat.Users.Remove(user);
+    }
+
+    public List<Chat> LeaveAllChats(User user)
+    {
+        var chats = new List<Chat>();
+        foreach (var chat in _chats.Values)
+            if (chat.Users.Remove(user))
+                chats.Add(chat);
+
+        return chats;
     }
 
     public bool KickUserFromChat(string hashId, string userName, User user)

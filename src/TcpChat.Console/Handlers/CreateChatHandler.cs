@@ -1,4 +1,5 @@
-﻿using TcpChat.Console.Models;
+﻿using TcpChat.Console.Dto;
+using TcpChat.Console.Models;
 using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
@@ -6,7 +7,7 @@ using TcpChat.Core.Logging;
 
 namespace TcpChat.Console.Handlers;
 
-public class CreateChatHandler : PacketHandler<Chat>
+public class CreateChatHandler : PacketHandler<CreateChatRequest>
 {
     private readonly ILogHandler _logger;
     private readonly IChatService _chatService;
@@ -19,7 +20,7 @@ public class CreateChatHandler : PacketHandler<Chat>
         _logger = logger;
     }
 
-    public override async Task HandleAsync(Chat request, CancellationToken ct)
+    public override async Task HandleAsync(CreateChatRequest request, CancellationToken ct)
     {
         var user = _authService.FindBySocket(Sender);
 
@@ -28,10 +29,15 @@ public class CreateChatHandler : PacketHandler<Chat>
             await SendErrorAsync("Not authenticated", ct);
             return;
         }
+
+        var chat = new Chat
+        {
+            Name = request.Name,
+            Creator = user
+        };
+        chat.Users.Add(user);
         
-        request.Users.Add(user);
-        
-        var id = _chatService.CreateChat(request);
+        var id = _chatService.CreateChat(chat);
 
         if (id is null)
         {
@@ -39,7 +45,7 @@ public class CreateChatHandler : PacketHandler<Chat>
             return;
         }
         
-        _logger.HandleText($"Chat {id} was created by {Sender.RemoteEndPoint}");
+        _logger.HandleText($"Chat {chat.Name} with id {id} was created by {user.Name}");
         await SendResponseAsync(new Packet
         {
             Event = "Chat Created",

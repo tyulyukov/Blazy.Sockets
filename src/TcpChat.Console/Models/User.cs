@@ -4,6 +4,6 @@ namespace TcpChat.Console.Models;
 
 public class User
 {
-    public string Name { get; init; } = default!;
-    public Socket Socket { get; init; }
+    public string Name { get; set; } = default!;
+    public Socket Socket { get; set; } = default!;
 }

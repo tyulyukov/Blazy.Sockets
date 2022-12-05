@@ -1,9 +1,12 @@
+using System.Text.Json;
 using Spectre.Console;
+using TcpChat.Console.Domain;
+using TcpChat.Console.Models;
 using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Network;
 
-namespace TcpChat.Console.Executables;
+namespace TcpChat.Console.Executables.Client;
 
 public class ConnectToChatExecutable : IConfigurableExecutable
 {
@@ -48,8 +51,16 @@ public class ConnectToChatExecutable : IConfigurableExecutable
             AnsiConsole.MarkupLine($"Chat with id [yellow]{_chatId}[/] [red]does not exist[/]");
             return;
         }
+
+        var chat = JsonDocument.Parse(response.State.ToString() ?? string.Empty).Deserialize<Chat>();
+
+        if (chat is null)
+        {
+            AnsiConsole.MarkupLine($"An [red]error[/] occurred during chat deserializing");
+            return;
+        }
         
-        await new ChatExecutable(_client, _chatId, _commandParserService).ExecuteAsync(token);
+        await new ChatExecutable(_client, _chatId, chat, _commandParserService).ExecuteAsync(token);
     }
 
     public void Configure()

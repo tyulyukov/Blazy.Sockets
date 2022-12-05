@@ -1,6 +1,10 @@
 ﻿using HashidsNet;
 using Spectre.Console;
+using TcpChat.Console;
+using TcpChat.Console.Domain;
 using TcpChat.Console.Executables;
+using TcpChat.Console.Executables.Client;
+using TcpChat.Console.Executables.Server;
 using TcpChat.Console.Handlers;
 using TcpChat.Console.Services;
 using TcpChat.Core.Handlers;
@@ -16,10 +20,11 @@ var authService = new AuthService();
 
 handlers.Register("Create Chat", new CreateChatHandler(encoder, chatService, authService, logger));
 handlers.Register("Connect To Chat", new ConnectToChatHandler(encoder, authService, chatService, logger));
+handlers.Register("Leave Chat", new LeaveChatHandler(encoder, authService, chatService, logger));
 handlers.Register("Auth", new AuthHandler(logger, encoder, authService));
 handlers.Register("Message", new SendMessageHandler(encoder, authService, chatService, logger));
 handlers.RegisterConnectionHandler(new ConnectionHandler(encoder, logger));
-handlers.RegisterDisconnectionHandler(new DisconnectionHandler(encoder, logger, authService));
+handlers.RegisterDisconnectionHandler(new DisconnectionHandler(encoder, logger, authService, chatService));
 
 var executables = new IExecutable[]
 {
@@ -41,11 +46,7 @@ while (!token.IsCancellationRequested)
 {
     try
     {
-        AnsiConsole.Clear();
-        AnsiConsole.Write(
-            new FigletText("WELCOME TO TCP CHAT")
-                .Centered()
-                .Color(Color.Teal));
+        AnsiConsoleUtil.ClearToBeginning();
 
         var executable = AnsiConsole.Prompt(
             new SelectionPrompt<IExecutable>()

@@ -30,17 +30,26 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
             return;
         }
 
-        if (!_chatService.JoinChat(request.Id, user))
+        var chat = _chatService.JoinChat(request.Id, user);
+        
+        if (chat is null)
         {
             await SendErrorAsync("An error occured during joining chat", ct);
             return;
         }
 
-        _logger.HandleText($"{user.Name} - {user.Socket.RemoteEndPoint} connected to chat {request.Id}");
+        _logger.HandleText($"{user.Name} connected to chat {chat.Name} with id {request.Id}");
         await SendResponseAsync(new Packet()
         {
             Event = "Connected To Chat",
-            State = request.Id
+            State = new
+            {
+                Name = chat.Name,
+                Creator = new
+                {
+                    Name = chat.Creator.Name
+                }
+            }
         }, ct);
     }
 }

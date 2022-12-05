@@ -1,10 +1,11 @@
 using Spectre.Console;
+using TcpChat.Console.Domain;
 using TcpChat.Console.Models;
 using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Network;
 
-namespace TcpChat.Console.Executables;
+namespace TcpChat.Console.Executables.Client;
 
 public class CreateMyChatExecutable : IExecutable
 {
@@ -27,6 +28,11 @@ public class CreateMyChatExecutable : IExecutable
 
         Packet? response = null;
         
+        var chat = new Chat
+        {
+            Name = chatName
+        };
+        
         await AnsiConsole.Status()
             .Spinner(Spinner.Known.SimpleDotsScrolling)
             .StartAsync("Creating chat", async ctx =>
@@ -34,15 +40,7 @@ public class CreateMyChatExecutable : IExecutable
                 await _client.SendRequestAsync(new Packet
                 {
                     Event = "Create Chat", 
-                    State = new Chat
-                    {
-                        Name = chatName,
-                        Creator = new User()
-                        {
-                            Name = "user123"
-                        },
-                        Users = new List<User>()
-                    }
+                    State = chat
                 }, token);
 
                 ctx.Status("Receiving response");
@@ -59,6 +57,6 @@ public class CreateMyChatExecutable : IExecutable
         AnsiConsole.MarkupLine($"Chat {chatName} created with id [yellow]{response.State}[/]");
         AnsiConsole.MarkupLine("[grey]Share this id to chat with someone[/]");
 
-        await new ChatExecutable(_client, response.State.ToString()!, _commandParserService).ExecuteAsync(token);
+        await new ChatExecutable(_client, response.State.ToString()!, chat, _commandParserService).ExecuteAsync(token);
     }
 }

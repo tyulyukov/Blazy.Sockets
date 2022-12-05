@@ -1,13 +1,14 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using Spectre.Console;
+using TcpChat.Console.Domain;
 using TcpChat.Console.Services;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Network;
 
-namespace TcpChat.Console.Executables;
+namespace TcpChat.Console.Executables.Client;
 
 public class ConnectingToServerExecutable : IConfigurableExecutable
 {
@@ -91,7 +92,7 @@ public class ConnectingToServerExecutable : IConfigurableExecutable
                 {
                     var executable = AnsiConsole.Prompt(
                         new SelectionPrompt<IExecutable>()
-                            .Title("What dou you wanna [green]start with[/]?")
+                            .Title($"[yellow]{username}[/], what do u you wanna [green]start with[/]?")
                             .UseConverter(exe => exe.RepresentationText)
                             .AddChoices(executables));
 
