@@ -28,7 +28,6 @@ public class ChatExecutable : IExecutable
     public Task ExecuteAsync(CancellationToken token)
     {
         AnsiConsole.Write(new Rule($"[yellow]{_chat.Name}[/]").LeftJustified());
-        AnsiConsole.MarkupLine("[grey]Type message[/]");
         AnsiConsole.MarkupLine("[grey]Available commands:[/]");
         // TODO print available commands from command parser
         AnsiConsole.MarkupLine("[grey]/leave[/]");

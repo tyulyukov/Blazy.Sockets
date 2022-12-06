@@ -28,12 +28,18 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
             
             var leftChats = _chatService.LeaveAllChats(user);
             
-            if (leftChats.Count == 0)
-                _logger.HandleText($"{user.Name} was not connected to any chat disconnection");
-            else if (leftChats.Count == 1)
-                _logger.HandleText($"{user.Name} left {leftChats[0].Name} chat due to disconnection");
-            else if (leftChats.Count > 1)
-                _logger.HandleText($"{user.Name} left {leftChats.Count} chats due to disconnection");
+            switch (leftChats.Count)
+            {
+                case 0:
+                    _logger.HandleText($"{user.Name} was not connected to any chat while disconnecting");
+                    break;
+                case 1:
+                    _logger.HandleText($"{user.Name} left {leftChats[0].Name} chat due to disconnection");
+                    break;
+                case > 1:
+                    _logger.HandleText($"{user.Name} left {leftChats.Count} chats due to disconnection");
+                    break;
+            }
             
             _logger.HandleText($"Disconnected user {user.Name} Connection Elapsed: {details.ConnectionTime}");
         }
