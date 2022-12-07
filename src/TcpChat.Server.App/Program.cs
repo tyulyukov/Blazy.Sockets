@@ -1,4 +1,6 @@
-﻿using HashidsNet;
+﻿using System;
+using System.Threading;
+using HashidsNet;
 using TcpChat.Core.Application;
 using TcpChat.Core.Logging;
 using TcpChat.Server.App.Handlers;
