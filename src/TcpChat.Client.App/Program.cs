@@ -1,6 +1,4 @@
-﻿using System;
-using System.Threading;
-using Spectre.Console;
+﻿using Spectre.Console;
 using TcpChat.Client.App;
 using TcpChat.Client.App.Services;
 using TcpChat.Core.Application;
