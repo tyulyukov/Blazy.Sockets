@@ -57,18 +57,24 @@ public class AuthHandler : PacketHandler<AuthRequest>
 ```
 
 
-#### 2. Register packet handler in Handlers Collection in Program.cs
+#### 2. Register packet handler in in Program.cs
 ```csharp
-var handlers = new HandlersCollection();
-var encoder = new JsonPacketEncoder();  // This is the default packet encoder, you can implement ur own (maybe Xml or smth)
-var authService = new AuthService(); 
+var builder = new ChatServerBuilder();
 
-handlers.Register("Auth", new AuthHandler(encoder, authService));
+builder.Use<IAuthService, AuthService>();
+builder.UsePacketHandler<AuthHandler>("Auth");
+
+using var app = builder.Build();
+var server = app.Resolve();
+await server.RunAsync();
 ```
 
 #### 3. Send packet with this event name. And that`s it!
 ```csharp
-using var client = new ChatClient(IPAddress.Parse(_ip), _port, _packetEncoder);
+var builder = new ChatClientBuilder();
+using var app = builder.Build();
+var client = app.Resolve();
+
 await client.ConnectAsync(ct);
 
 var response = await client.SendAsync(new Packet
@@ -82,7 +88,5 @@ var response = await client.SendAsync(new Packet
 ```
 
 ## 📈 Plans for:
-- Autofac DI
 - ILogger from MS instead of rough ILogHandler
 - Middlewares
-- HandlersCollection in ChatClient (to receive messages in chat asynchronously)

@@ -4,5 +4,5 @@ namespace TcpChat.Core.Network;
 
 public interface ISocketAcceptor : IDisposable
 {
-    Task AcceptSocketAsync(Socket socket, CancellationToken ct);
+    Task AcceptSocketAsync(Socket socket, CancellationToken ct = default);
 }

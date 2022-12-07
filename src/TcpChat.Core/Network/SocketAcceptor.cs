@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using Autofac;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
@@ -7,22 +8,22 @@ namespace TcpChat.Core.Network;
 
 public class SocketAcceptor : ISocketAcceptor
 {
-    private readonly IHandlersCollection _handlers;
     private readonly List<Socket> _clients;
     private readonly object _threadLocker;
+    private readonly ILifetimeScope _scope;
     private readonly IEncoder<Packet> _packetEncoder;
     private readonly ILogHandler _logger;
 
-    public SocketAcceptor(IHandlersCollection handlers, IEncoder<Packet> packetEncoder, ILogHandler logger)
+    public SocketAcceptor(ILifetimeScope scope, IEncoder<Packet> packetEncoder, ILogHandler logger)
     {
-        _handlers = handlers;
         _clients = new ();
+        _scope = scope;
         _packetEncoder = packetEncoder;
         _logger = logger;
         _threadLocker = new ();
     }
 
-    public async Task AcceptSocketAsync(Socket socket, CancellationToken ct)
+    public async Task AcceptSocketAsync(Socket socket, CancellationToken ct = default)
     {
         var connectionDetails = new ConnectionDetails()
         {
@@ -31,18 +32,17 @@ public class SocketAcceptor : ISocketAcceptor
         
         lock (_threadLocker)
             _clients.Add(socket);
-        
-        var handler = _handlers.ResolveConnectionHandler();
 
-        if (handler is not null)
+
+        if (_scope.TryResolve<PacketHandler<ConnectionDetails>>(out var handler))
         {
             await handler.HandleWithScopedSocketAsync(socket, connectionDetails, ct);
         }
         
-        _ = Task.Run(() => ReceivePacketsAsync(socket, connectionDetails, ct), ct);
+        _ = Task.Run(() => ReceivePacketsAsync(socket, connectionDetails, ct));
     }
     
-    private async void ReceivePacketsAsync(Socket client, ConnectionDetails connectionDetails, CancellationToken ct)
+    private async void ReceivePacketsAsync(Socket client, ConnectionDetails connectionDetails, CancellationToken ct = default)
     {   
         try
         {
@@ -58,8 +58,8 @@ public class SocketAcceptor : ISocketAcceptor
                 // TODO middlewares here
                 // _logger.HandleText($"Incoming packet from {client.RemoteEndPoint}");
 
-                var handler = _handlers.Resolve(request.Event);
-
+                var handler = _scope.ResolveOptional<IPacketHandler>(new NamedParameter("eventName", request.Event));
+                
                 if (handler is null)
                 {
                     var message = $"Handler was not found for {request.Event} event";
@@ -77,9 +77,7 @@ public class SocketAcceptor : ISocketAcceptor
         }
         catch (Exception exception)
         {
-            var handler = _handlers.ResolveDisconnectionHandler();
-
-            if (handler is not null)
+            if (_scope.TryResolve<PacketHandler<DisconnectionDetails>>(out var handler))
             {
                 await handler.HandleWithScopedSocketAsync(client, new DisconnectionDetails
                 {
@@ -97,7 +95,7 @@ public class SocketAcceptor : ISocketAcceptor
         }
     }
 
-    private async Task SendErrorAsync(Socket client, string message, CancellationToken ct)
+    private async Task SendErrorAsync(Socket client, string message, CancellationToken ct = default)
     {
         _logger.HandleText(message);
                     

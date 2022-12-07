@@ -1,12 +1,13 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Configuration;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
 using TcpChat.Core.Handlers;
 
 namespace TcpChat.Core.Network;
 
-public class ChatClient : INetworkClient
+internal class ChatClient : INetworkClient
 {
     public bool Connected => _client.Connected;
     
@@ -14,14 +15,17 @@ public class ChatClient : INetworkClient
     private readonly Socket _client;
     private readonly IEncoder<Packet> _packetEncoder;
 
-    public ChatClient(IPAddress ip, int remotePort, IEncoder<Packet> packetEncoder)
+    public ChatClient(IConfiguration configuration, IEncoder<Packet> packetEncoder)
     {
+        var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
+        var port = configuration.GetValue<int>("Connection:Port");
+        
         _packetEncoder = packetEncoder;
-        _endPoint = new IPEndPoint(ip, remotePort);
+        _endPoint = new IPEndPoint(ip, port);
         _client = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
-    public async Task ConnectAsync(CancellationToken ct)
+    public async Task ConnectAsync(CancellationToken ct = default)
     {
         await _client.ConnectAsync(_endPoint, ct);
     }
@@ -32,19 +36,19 @@ public class ChatClient : INetworkClient
             _client.Shutdown(SocketShutdown.Both);
     }
 
-    public async Task<Packet?> SendWithTimeOutAsync(Packet packet, TimeSpan timeout, CancellationToken ct)
+    public async Task<Packet?> SendWithTimeOutAsync(Packet packet, TimeSpan timeout, CancellationToken ct = default)
     {
         await SendRequestAsync(packet, ct);
         return await ReceiveResponseWithTimeOutAsync(timeout, ct);
     }
     
-    public async Task<Packet?> SendAsync(Packet packet, CancellationToken ct)
+    public async Task<Packet?> SendAsync(Packet packet, CancellationToken ct = default)
     {
         await SendRequestAsync(packet, ct);
         return await ReceiveResponseAsync(ct);
     }
 
-    public async Task SendRequestAsync(Packet packet, CancellationToken ct)
+    public async Task SendRequestAsync(Packet packet, CancellationToken ct = default)
     {
         try
         {
@@ -58,7 +62,7 @@ public class ChatClient : INetworkClient
         }
     }
 
-    public async Task<Packet?> ReceiveResponseWithTimeOutAsync(TimeSpan timeout, CancellationToken ct)
+    public async Task<Packet?> ReceiveResponseWithTimeOutAsync(TimeSpan timeout, CancellationToken ct = default)
     {
         try
         {
@@ -80,7 +84,7 @@ public class ChatClient : INetworkClient
         }
     }
     
-    public async Task<Packet?> ReceiveResponseAsync(CancellationToken ct)
+    public async Task<Packet?> ReceiveResponseAsync(CancellationToken ct = default)
     {
         try
         {
