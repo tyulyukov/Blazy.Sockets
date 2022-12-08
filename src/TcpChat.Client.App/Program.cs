@@ -1,5 +1,6 @@
 ﻿using Spectre.Console;
 using TcpChat.Client.App;
+using TcpChat.Client.App.Executables;
 using TcpChat.Client.App.Services;
 using TcpChat.Core.Application;
 
@@ -19,9 +20,9 @@ while (!cts.Token.IsCancellationRequested)
     try
     {
         AnsiConsoleUtil.ClearToBeginning();
-        /*var executable = new ConnectingToServerExecutable();
-
-        await executable.ExecuteAsync(token);*/
+        
+        var executable = new ConnectingToServerExecutable(); // pass scope here
+        await executable.ExecuteAsync(cts.Token);
     }
     catch (Exception exception)
     {
