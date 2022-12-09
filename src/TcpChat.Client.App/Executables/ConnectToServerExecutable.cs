@@ -39,6 +39,7 @@ public class ConnectToServerExecutable : IExecutable
                 catch (SocketException)
                 {
                     AnsiConsole.MarkupLine("An [red]error[/] has occurred while connecting with server");
+                    throw;
                 }
             });
 

@@ -16,8 +16,8 @@ public class ChatServerBuilder : NetworkBuilder
     {
         _packetHandlerEvents = new List<string>();
         
-        Builder.RegisterType<ChatServer>().As<INetworkServer>();
-        Builder.RegisterType<SocketAcceptor>().As<ISocketAcceptor>();
+        Builder.RegisterType<ChatServer>().As<INetworkServer>().SingleInstance();
+        Builder.RegisterType<SocketAcceptor>().As<ISocketAcceptor>().SingleInstance();
     }
 
     public void UsePacketHandler<THandler>(string eventName) where THandler : IPacketHandler
@@ -34,7 +34,7 @@ public class ChatServerBuilder : NetworkBuilder
 
     public void UseMiddleware<TMiddleware>() where TMiddleware : IMiddleware
     {
-        Builder.RegisterType<TMiddleware>().SingleInstance().As<IMiddleware>();
+        Builder.RegisterType<TMiddleware>().As<IMiddleware>().SingleInstance();
     }
     
     public void UseConnectionHandler<THandler>() where THandler : PacketHandler<ConnectionDetails>
