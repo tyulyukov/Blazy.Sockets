@@ -31,6 +31,13 @@ void ConsoleOnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs) =
 
 Console.CancelKeyPress += ConsoleOnCancelKeyPress;
 
-await server.RunAsync(cts.Token);
+try
+{
+    await server.RunAsync(cts.Token);
+}
+catch (Exception exception)
+{
+    Console.Error.Write(exception);
+}
 
 Console.CancelKeyPress -= ConsoleOnCancelKeyPress;
