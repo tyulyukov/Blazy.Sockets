@@ -1,5 +1,7 @@
 using System.Net.Sockets;
 using Autofac;
+using Autofac.Core;
+using TcpChat.Core.Application;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
@@ -33,8 +35,7 @@ public class SocketAcceptor : ISocketAcceptor
         lock (_threadLocker)
             _clients.Add(socket);
 
-
-        if (_scope.TryResolve<PacketHandler<ConnectionDetails>>(out var handler))
+        if (_scope.TryResolveNamed<PacketHandler<ConnectionDetails>>(ChatServerBuilder.ConnectedEventName, out var handler))
         {
             await handler.HandleWithScopedSocketAsync(socket, connectionDetails, ct);
         }
@@ -58,7 +59,7 @@ public class SocketAcceptor : ISocketAcceptor
                 // TODO middlewares here
                 // _logger.HandleText($"Incoming packet from {client.RemoteEndPoint}");
 
-                var handler = _scope.ResolveOptional<IPacketHandler>(new NamedParameter("eventName", request.Event));
+                var handler = _scope.ResolveOptionalNamed<IPacketHandler>(request.Event);
                 
                 if (handler is null)
                 {
@@ -77,7 +78,7 @@ public class SocketAcceptor : ISocketAcceptor
         }
         catch (Exception exception)
         {
-            if (_scope.TryResolve<PacketHandler<DisconnectionDetails>>(out var handler))
+            if (_scope.TryResolveNamed<PacketHandler<DisconnectionDetails>>(ChatServerBuilder.DisconnectedEventName, out var handler))
             {
                 await handler.HandleWithScopedSocketAsync(client, new DisconnectionDetails
                 {

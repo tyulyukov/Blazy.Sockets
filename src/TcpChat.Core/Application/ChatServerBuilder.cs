@@ -7,18 +7,8 @@ namespace TcpChat.Core.Application;
 
 public class ChatServerBuilder : NetworkBuilder
 {
-    private class NetworkApplication : NetworkApplication<INetworkServer>
-    {
-        internal NetworkApplication(IContainer container) : base(container) { }
-        
-        public override INetworkServer Resolve()
-        {
-            return Container.Resolve<INetworkServer>();
-        }
-    }
-    
-    private const string ConnectedEventName = "Connection";
-    private const string DisconnectedEventName = "Disconnection";
+    public const string ConnectedEventName = "Connection";
+    public const string DisconnectedEventName = "Disconnection";
 
     private readonly List<string> _packetHandlerEvents;
     
@@ -34,9 +24,11 @@ public class ChatServerBuilder : NetworkBuilder
     {
         if (_packetHandlerEvents.Contains(eventName))
             throw new ApplicationException($"Event handler with event name {eventName} already exists");
-        
-        Builder.RegisterType<THandler>().As<IPacketHandler>().SingleInstance().WithParameter("eventName", eventName);
-        
+
+        Builder.RegisterType<THandler>()
+            .Named<IPacketHandler>(eventName)
+            .SingleInstance();
+
         _packetHandlerEvents.Add(eventName);
     }
 
@@ -49,8 +41,10 @@ public class ChatServerBuilder : NetworkBuilder
     {
         if (_packetHandlerEvents.Contains(ConnectedEventName))
             throw new ApplicationException("Connection handler already exists");
-        
-        Builder.RegisterType<THandler>().AsSelf().SingleInstance().WithParameter("eventName", ConnectedEventName);
+
+        Builder.RegisterType<THandler>()
+            .Named<PacketHandler<ConnectionDetails>>(ConnectedEventName)
+            .SingleInstance();
         
         _packetHandlerEvents.Add(ConnectedEventName);
     }
@@ -59,17 +53,11 @@ public class ChatServerBuilder : NetworkBuilder
     {
         if (_packetHandlerEvents.Contains(DisconnectedEventName))
             throw new ApplicationException("Disconnection handler already exists");
-        
-        Builder.RegisterType<THandler>().AsSelf().SingleInstance().WithParameter("eventName", DisconnectedEventName);
+
+        Builder.RegisterType<THandler>()
+            .Named<PacketHandler<DisconnectionDetails>>(DisconnectedEventName)
+            .SingleInstance();
         
         _packetHandlerEvents.Add(DisconnectedEventName);
-    }
-
-    public NetworkApplication<INetworkServer> Build()
-    {
-        BeforeBuild();
-        
-        var container = Builder.Build();
-        return new NetworkApplication(container);
     }
 }

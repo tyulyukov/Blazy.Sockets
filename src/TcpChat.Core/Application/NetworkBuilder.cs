@@ -10,12 +10,14 @@ public abstract class NetworkBuilder
 {
     protected readonly ContainerBuilder Builder;
 
-    protected NetworkBuilder()
+    protected NetworkBuilder() : this("appsettings.json") { }
+
+    protected NetworkBuilder(string configPath)
     {
         Builder = new ();
 
         var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", true, true)
+            .AddJsonFile(configPath, true, true)
             .Build();
         
         Builder.RegisterInstance(config).As<IConfiguration>();
@@ -37,8 +39,14 @@ public abstract class NetworkBuilder
         Builder.RegisterInstance(instance).AsSelf().SingleInstance();
     }
 
-    protected void BeforeBuild()
+    protected virtual void BeforeBuild()
     {
         Builder.RegisterType<JsonPacketEncoder>().As<IEncoder<Packet>>().IfNotRegistered(typeof(IEncoder<Packet>));
+    }
+    
+    public IContainer Build()
+    {
+        BeforeBuild();
+        return Builder.Build();
     }
 }

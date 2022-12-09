@@ -1,47 +1,48 @@
-﻿using Spectre.Console;
+﻿using System.Net.Sockets;
+using Spectre.Console;
 using TcpChat.Client.App.Domain;
-using TcpChat.Client.App.Services;
 using TcpChat.Core.Contracts;
-using TcpChat.Core.Handlers;
+using TcpChat.Core.Exceptions;
 using TcpChat.Core.Network;
 
 namespace TcpChat.Client.App.Executables;
 
-public class ConnectingToServerExecutable : IExecutable
+public class ConnectToServerExecutable : IExecutable
 {
     public string RepresentationText => "Connect to the server";
 
-    private readonly IEncoder<Packet> _packetEncoder;
-    private readonly IServerCommandParserService _commandParserService;
-    
-    public ConnectingToServerExecutable(IEncoder<Packet> packetEncoder,
-        IServerCommandParserService commandParserService)
+    private readonly INetworkClient _client;
+    private readonly ConnectToChatExecutable _connectToChatExe;
+    private readonly CreateMyChatExecutable _createMyChatExe;
+
+    public ConnectToServerExecutable(INetworkClient client, 
+        ConnectToChatExecutable connectToChatExe, CreateMyChatExecutable createMyChatExe)
     {
-        _packetEncoder = packetEncoder;
-        _commandParserService = commandParserService;
+        _client = client;
+        _connectToChatExe = connectToChatExe;
+        _createMyChatExe = createMyChatExe;
     }
 
     public async Task ExecuteAsync(CancellationToken token)
     {
         AnsiConsole.Write(new Rule("[yellow]Chat[/]").LeftJustified());
         
-        /*using var client = new ChatClient(IPAddress.Parse(_ip), _port.Value, _packetEncoder);
         await AnsiConsole.Status()
             .Spinner(Spinner.Known.Aesthetic)
             .StartAsync("Connecting", async ctx =>
             {
                 try
                 {
-                    await client.ConnectAsync(token);
+                    await _client.ConnectAsync(token);
                     AnsiConsole.MarkupLine("Connected to the server");
                 }
-                catch (SocketException exception)
+                catch (SocketException)
                 {
                     AnsiConsole.MarkupLine("An [red]error[/] has occurred while connecting with server");
                 }
             });
 
-        if (token.IsCancellationRequested || !client.Connected)
+        if (token.IsCancellationRequested || !_client.Connected)
             return;
         
         try
@@ -54,7 +55,7 @@ public class ConnectingToServerExecutable : IExecutable
             {
                 try
                 {
-                    if (await AuthenticateAsync(client, username, token))
+                    if (await AuthenticateAsync(_client, username, token))
                         break;
 
                     username = AnsiConsole.Prompt(
@@ -74,8 +75,8 @@ public class ConnectingToServerExecutable : IExecutable
             
             var executables = new IExecutable[]
             {
-                new ConnectToChatExecutable(client, _commandParserService), 
-                new CreateMyChatExecutable(client, _commandParserService)
+                _connectToChatExe,
+                _createMyChatExe
             };
 
             while (!token.IsCancellationRequested)
@@ -87,9 +88,6 @@ public class ConnectingToServerExecutable : IExecutable
                             .Title($"[yellow]{username}[/], what do u you wanna [green]start with[/]?")
                             .UseConverter(exe => exe.RepresentationText)
                             .AddChoices(executables));
-
-                    if (executable is IConfigurableExecutable configurableExe)
-                        configurableExe.Configure();
 
                     await executable.ExecuteAsync(token);
                 }
@@ -110,7 +108,7 @@ public class ConnectingToServerExecutable : IExecutable
         finally
         {
             AnsiConsole.WriteLine("Execution stopped");
-        }*/
+        }
     }
 
     private async Task<bool> AuthenticateAsync(INetworkClient client, string username, CancellationToken ct)

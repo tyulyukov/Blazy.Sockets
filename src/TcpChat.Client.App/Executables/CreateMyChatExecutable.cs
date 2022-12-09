@@ -12,12 +12,12 @@ public class CreateMyChatExecutable : IExecutable
     public string RepresentationText => "Create my chat";
     
     private readonly INetworkClient _client;
-    private readonly IServerCommandParserService _commandParserService;
+    private readonly ChatExecutable _chatExe;
 
-    public CreateMyChatExecutable(INetworkClient client, IServerCommandParserService commandParserService)
+    public CreateMyChatExecutable(INetworkClient client, ChatExecutable chatExe)
     {
         _client = client;
-        _commandParserService = commandParserService;
+        _chatExe = chatExe;
     }
     
     public async Task ExecuteAsync(CancellationToken token)
@@ -58,6 +58,7 @@ public class CreateMyChatExecutable : IExecutable
         AnsiConsole.MarkupLine($"Chat {chatName} created with id [yellow]{response.State}[/]");
         AnsiConsole.MarkupLine("[grey]Share this id to chat with someone[/]");
 
-        await new ChatExecutable(_client, response.State.ToString()!, chat, _commandParserService).ExecuteAsync(token);
+        _chatExe.Initialize(response.State.ToString()!, chat);
+        await _chatExe.ExecuteAsync(token);
     }
 }

@@ -1,6 +1,8 @@
-﻿using HashidsNet;
+﻿using Autofac;
+using HashidsNet;
 using TcpChat.Core.Application;
 using TcpChat.Core.Logging;
+using TcpChat.Core.Network;
 using TcpChat.Server.App.Handlers;
 using TcpChat.Server.App.Services;
 
@@ -20,8 +22,8 @@ builder.UsePacketHandler<SendMessageHandler>("Message");
 builder.UseConnectionHandler<ConnectionHandler>();
 builder.UseDisconnectionHandler<DisconnectionHandler>();
 
-using var app = builder.Build();
-var server = app.Resolve();
+await using var app = builder.Build();
+var server = app.Resolve<INetworkServer>();
 
 using var cts = new CancellationTokenSource();
 

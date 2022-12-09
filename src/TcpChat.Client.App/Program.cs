@@ -1,13 +1,20 @@
-﻿using Spectre.Console;
+﻿using Autofac;
+using Spectre.Console;
 using TcpChat.Client.App;
 using TcpChat.Client.App.Executables;
 using TcpChat.Client.App.Services;
 using TcpChat.Core.Application;
 
 var builder = new ChatClientBuilder();
+
 builder.Use<IServerCommandParserService, ServerCommandParserService>();
 
-using var app = builder.Build();
+builder.Use<ConnectToServerExecutable>();
+builder.Use<ConnectToChatExecutable>();
+builder.Use<ChatExecutable>();
+builder.Use<CreateMyChatExecutable>();
+
+await using var app = builder.Build();
 
 using var cts = new CancellationTokenSource();
 
@@ -21,7 +28,7 @@ while (!cts.Token.IsCancellationRequested)
     {
         AnsiConsoleUtil.ClearToBeginning();
         
-        var executable = new ConnectingToServerExecutable(); // pass scope here
+        var executable = app.Resolve<ConnectToServerExecutable>();
         await executable.ExecuteAsync(cts.Token);
     }
     catch (Exception exception)

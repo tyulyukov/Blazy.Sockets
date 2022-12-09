@@ -13,20 +13,28 @@ public class ChatExecutable : IExecutable
     public string RepresentationText => "Send and receive messages in chat";
 
     private readonly INetworkClient _client;
-    private readonly string _chatId;
-    private readonly Chat _chat;
     private readonly IServerCommandParserService _commandParserService;
 
-    public ChatExecutable(INetworkClient client, string chatId, Chat chat, IServerCommandParserService commandParserService)
+    private string? _chatId;
+    private Chat? _chat;
+    
+    public ChatExecutable(INetworkClient client, IServerCommandParserService commandParserService)
     {
         _client = client;
+        _commandParserService = commandParserService;
+    }
+
+    public void Initialize(string chatId, Chat chat)
+    {
         _chatId = chatId;
         _chat = chat;
-        _commandParserService = commandParserService;
     }
     
     public Task ExecuteAsync(CancellationToken token)
     {
+        if (_chatId is null || _chat is null)
+            throw new ApplicationException("Executable is not initialized");
+        
         AnsiConsole.Write(new Rule($"[yellow]{_chat.Name}[/]").LeftJustified());
         AnsiConsole.MarkupLine("[grey]Available commands:[/]");
         // TODO print available commands from command parser
