@@ -3,45 +3,97 @@ using Autofac.Configuration;
 using Microsoft.Extensions.Configuration;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
+using TcpChat.Core.Network;
 
 namespace TcpChat.Core.Application;
 
-public abstract class NetworkBuilder
+public class NetworkBuilder
 {
-    protected readonly ContainerBuilder Builder;
+    public const string ConnectedEventName = "Connection";
+    public const string DisconnectedEventName = "Disconnection";
 
-    protected NetworkBuilder() : this("appsettings.json") { }
+    private readonly List<string> _packetHandlerEvents;
+    private readonly ContainerBuilder _builder;
+    
 
-    protected NetworkBuilder(string configPath)
+    public NetworkBuilder() : this("appsettings.json") { }
+
+    public NetworkBuilder(string configPath)
     {
-        Builder = new ();
+        _builder = new ();
+        _packetHandlerEvents = new List<string>();
 
         var config = new ConfigurationBuilder()
             .AddJsonFile(configPath, true, true)
             .Build();
         
-        Builder.RegisterInstance(config).As<IConfiguration>();
-        Builder.RegisterModule(new ConfigurationModule(config));
+        _builder.RegisterInstance(config).As<IConfiguration>();
+        _builder.RegisterModule(new ConfigurationModule(config));
+        
+        Use<INetworkServer, ChatServer>();
+        Use<ISocketAcceptor, SocketAcceptor>();
+        Use<INetworkClient, ChatClient>();
     }
 
     public void Use<TInterface, TImplementation>() where TInterface : notnull where TImplementation : TInterface
     {
-        Builder.RegisterType<TImplementation>().As<TInterface>().SingleInstance();
+        _builder.RegisterType<TImplementation>().As<TInterface>().SingleInstance();
     }
 
     public void Use<TImplementation>() where TImplementation : notnull
     {
-        Builder.RegisterType<TImplementation>().AsSelf().SingleInstance();
+        _builder.RegisterType<TImplementation>().AsSelf().SingleInstance();
     }
 
     public void Use<TInstance>(TInstance instance) where TInstance : class
     {
-        Builder.RegisterInstance(instance).AsSelf().SingleInstance();
+        _builder.RegisterInstance(instance).AsSelf().SingleInstance();
     }
 
+    public void UsePacketHandler<THandler>(string eventName) where THandler : IPacketHandler
+    {
+        if (_packetHandlerEvents.Contains(eventName))
+            throw new ApplicationException($"Event handler with event name {eventName} already exists");
+
+        _builder.RegisterType<THandler>()
+            .Named<IPacketHandler>(eventName)
+            .SingleInstance();
+
+        _packetHandlerEvents.Add(eventName);
+    }
+
+    public void UseMiddleware<TMiddleware>() where TMiddleware : IMiddleware
+    {
+        _builder.RegisterType<TMiddleware>().As<IMiddleware>().SingleInstance();
+    }
+    
+    public void UseConnectionHandler<THandler>() where THandler : PacketHandler<ConnectionDetails>
+    {
+        if (_packetHandlerEvents.Contains(ConnectedEventName))
+            throw new ApplicationException("Connection handler already exists");
+
+        _builder.RegisterType<THandler>()
+            .Named<PacketHandler<ConnectionDetails>>(ConnectedEventName)
+            .SingleInstance();
+        
+        _packetHandlerEvents.Add(ConnectedEventName);
+    }
+
+    public void UseDisconnectionHandler<THandler>() where THandler : PacketHandler<DisconnectionDetails>
+    {
+        if (_packetHandlerEvents.Contains(DisconnectedEventName))
+            throw new ApplicationException("Disconnection handler already exists");
+
+        _builder.RegisterType<THandler>()
+            .Named<PacketHandler<DisconnectionDetails>>(DisconnectedEventName)
+            .SingleInstance();
+        
+        _packetHandlerEvents.Add(DisconnectedEventName);
+    }
+    
     protected virtual void BeforeBuild()
     {
-        Builder.RegisterType<JsonPacketEncoder>()
+        _builder.RegisterType<JsonPacketEncoder>()
             .As<IEncoder<Packet>>()
             .SingleInstance()
             .IfNotRegistered(typeof(IEncoder<Packet>));
@@ -50,6 +102,6 @@ public abstract class NetworkBuilder
     public IContainer Build()
     {
         BeforeBuild();
-        return Builder.Build();
+        return _builder.Build();
     }
 }

@@ -6,7 +6,7 @@ using TcpChat.Core.Network;
 using TcpChat.Server.App.Handlers;
 using TcpChat.Server.App.Services;
 
-var builder = new ChatServerBuilder();
+var builder = new NetworkBuilder();
 builder.Use<ILogHandler, LogHandler>();
 builder.Use(new Hashids(DateTime.UtcNow.ToString(), 5));
 

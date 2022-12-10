@@ -5,7 +5,7 @@ using TcpChat.Client.App.Executables;
 using TcpChat.Client.App.Services;
 using TcpChat.Core.Application;
 
-var builder = new ChatClientBuilder();
+var builder = new NetworkBuilder();
 
 builder.Use<IServerCommandParserService, ServerCommandParserService>();
 

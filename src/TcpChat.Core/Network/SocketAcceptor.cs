@@ -35,7 +35,7 @@ public class SocketAcceptor : ISocketAcceptor
         lock (_threadLocker)
             _clients.Add(socket);
 
-        if (_scope.TryResolveNamed<PacketHandler<ConnectionDetails>>(ChatServerBuilder.ConnectedEventName, out var handler))
+        if (_scope.TryResolveNamed<PacketHandler<ConnectionDetails>>(NetworkBuilder.ConnectedEventName, out var handler))
         {
             await handler.HandleWithScopedSocketAsync(socket, connectionDetails, ct);
         }
@@ -78,7 +78,7 @@ public class SocketAcceptor : ISocketAcceptor
         }
         catch (Exception exception)
         {
-            if (_scope.TryResolveNamed<PacketHandler<DisconnectionDetails>>(ChatServerBuilder.DisconnectedEventName, out var handler))
+            if (_scope.TryResolveNamed<PacketHandler<DisconnectionDetails>>(NetworkBuilder.DisconnectedEventName, out var handler))
             {
                 await handler.HandleWithScopedSocketAsync(client, new DisconnectionDetails
                 {
