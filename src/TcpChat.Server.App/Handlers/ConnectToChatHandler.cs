@@ -21,15 +21,15 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
 
     public override async Task HandleAsync(ConnectToChatRequest request, CancellationToken ct)
     {
-        var user = _authService.FindBySocket(Sender);
+        var sender = _authService.FindBySocket(Sender);
 
-        if (user is null)
+        if (sender is null)
         {
             await SendErrorAsync("Not authenticated", ct);
             return;
         }
 
-        var chat = _chatService.JoinChat(request.Id, user);
+        var chat = _chatService.JoinChat(request.Id, sender);
         
         if (chat is null)
         {
@@ -37,7 +37,7 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
             return;
         }
 
-        _logger.HandleText($"{user.Name} connected to chat {chat.Name} with id {request.Id}");
+        _logger.HandleText($"{sender.Name} connected to chat {chat.Name} with id {request.Id}");
         await SendResponseAsync(new Packet()
         {
             Event = "Connected To Chat",
@@ -50,5 +50,18 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
                 }
             }
         }, ct);
+
+        foreach (var user in _chatService.GetUsersFromChat(request.Id, u => u.Name != sender.Name))
+        {
+            await SendResponseAsync(user.Socket, new Packet
+            {
+                Event = "User Joined",
+                State = new
+                {
+                    User = sender.Name,
+                    Chat = request.Id
+                }
+            }, ct);
+        }
     }
 }

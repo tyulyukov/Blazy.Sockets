@@ -7,6 +7,6 @@ public class ChatClientBuilder : NetworkBuilder
 {
     public ChatClientBuilder()
     {
-        Builder.RegisterType<ChatClient>().As<INetworkClient>().SingleInstance();
+        Use<INetworkClient, ChatClient>();
     }
 }

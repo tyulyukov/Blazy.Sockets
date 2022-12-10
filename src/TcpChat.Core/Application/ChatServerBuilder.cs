@@ -15,9 +15,9 @@ public class ChatServerBuilder : NetworkBuilder
     public ChatServerBuilder()
     {
         _packetHandlerEvents = new List<string>();
-        
-        Builder.RegisterType<ChatServer>().As<INetworkServer>().SingleInstance();
-        Builder.RegisterType<SocketAcceptor>().As<ISocketAcceptor>().SingleInstance();
+
+        Use<INetworkServer, ChatServer>();
+        Use<ISocketAcceptor, SocketAcceptor>();
     }
 
     public void UsePacketHandler<THandler>(string eventName) where THandler : IPacketHandler

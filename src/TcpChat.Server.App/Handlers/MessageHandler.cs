@@ -45,6 +45,6 @@ public class SendMessageHandler : PacketHandler<SendMessageRequest>
             }, ct);
         }
         
-        _logger.HandleText($"{sender.Name} - {Sender.RemoteEndPoint} sent message {request.Message} to chat {request.Chat}");
+        _logger.HandleText($"{sender.Name} sent message {request.Message} to chat {request.Chat}");
     }
 }

@@ -102,7 +102,7 @@ public class ConnectToServerExecutable : IExecutable
                 }
             }
         }
-        catch (SocketDisconnectedException exception)
+        catch (SocketDisconnectedException)
         {
             AnsiConsole.WriteLine("Disconnected from server");
         }

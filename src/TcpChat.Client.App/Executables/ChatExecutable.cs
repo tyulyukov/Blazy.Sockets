@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Spectre.Console;
 using TcpChat.Client.App.Domain;
 using TcpChat.Client.App.Models;
@@ -17,6 +18,8 @@ public class ChatExecutable : IExecutable
 
     private string? _chatId;
     private Chat? _chat;
+
+    private int _consoleRowsPassed;
     
     public ChatExecutable(INetworkClient client, IServerCommandParserService commandParserService)
     {
@@ -61,14 +64,59 @@ public class ChatExecutable : IExecutable
                 if (packet is null) 
                     continue;
                 
-                if (packet.Event == "Left Chat")
+                if (packet.Event is "Left Chat" or "Kicked From Chat")
                 {
                     leaveChat();
                     break;
                 }
+
+                var prevLeft = Console.CursorLeft;
+                var prevTop = Console.CursorTop;
+
+                _consoleRowsPassed++;
+                Console.CursorTop += _consoleRowsPassed;
+                Console.CursorLeft = 0;
                 
-                AnsiConsole.WriteLine($"Incoming packet {packet.State}");
+                // here is too much duplicate code so i really need to do smth with handlers and autofac
+                switch (packet.Event)
+                {
+                    case "Message":
+                    {
+                        var message = JsonSerializer.Deserialize<Message>(packet.State.ToString()!);
+
+                        if (message is null || message.Chat != _chatId)
+                            return;
+                    
+                        AnsiConsole.WriteLine($"<{message.From}> {message.Content}");
+                        break;
+                    }
+                    case "User Joined":
+                    {
+                        var message = JsonSerializer.Deserialize<UserJoinedMessage>(packet.State.ToString()!);
+
+                        if (message is null || message.Chat != _chatId)
+                            return;
+
+                        AnsiConsole.MarkupLine($"[green]<{message.User}> joined the chat[/]");
+                        break;
+                    }
+                    case "User Left":
+                    {
+                        var message = JsonSerializer.Deserialize<UserLeftMessage>(packet.State.ToString()!);
+
+                        if (message is null || message.Chat != _chatId)
+                            return;
+
+                        AnsiConsole.MarkupLine(!message.Disconnected
+                            ? $"[red]<{message.User}> left the chat[/]"
+                            : $"[red]<{message.User}> disconnected[/]");
+                        break;
+                    }
+                    default: continue;
+                }
                 
+                Console.CursorTop = prevTop;
+                Console.CursorLeft = prevLeft;
             }
         }
         catch (SocketDisconnectedException) { }
@@ -80,11 +128,13 @@ public class ChatExecutable : IExecutable
         {
             while (!ct.IsCancellationRequested)
             {
-                var message = AnsiConsole.Prompt(
-                    new TextPrompt<string>(">")
-                        .PromptStyle("yellow")
-                        .Validate(str => str.Length <= 128)
-                        .ValidationErrorMessage("nah bro its [red]too long[/]"));
+                _consoleRowsPassed = 0;
+                var message = AnsiConsole.Prompt(new TextPrompt<string>(">")
+                    .PromptStyle("yellow")
+                    .Validate(str => str.Length <= 128)
+                    .ValidationErrorMessage("nah bro its [red]too long[/]"));
+
+                Console.CursorTop += _consoleRowsPassed;
 
                 // this will be in parser or smth similar
                 if (message.Trim() == "/leave")
@@ -115,6 +165,8 @@ public class ChatExecutable : IExecutable
                         Message = message
                     }
                 }, ct);
+                
+                // AnsiConsole.MarkupLine($"[yellow]<me> {message}[/]");
             }
         }
         catch (SocketDisconnectedException) { }

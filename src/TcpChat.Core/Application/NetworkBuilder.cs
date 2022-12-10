@@ -41,7 +41,10 @@ public abstract class NetworkBuilder
 
     protected virtual void BeforeBuild()
     {
-        Builder.RegisterType<JsonPacketEncoder>().As<IEncoder<Packet>>().IfNotRegistered(typeof(IEncoder<Packet>));
+        Builder.RegisterType<JsonPacketEncoder>()
+            .As<IEncoder<Packet>>()
+            .SingleInstance()
+            .IfNotRegistered(typeof(IEncoder<Packet>));
     }
     
     public IContainer Build()
