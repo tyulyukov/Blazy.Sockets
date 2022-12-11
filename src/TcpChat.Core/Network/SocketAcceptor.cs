@@ -1,6 +1,3 @@
-using System.Net.Sockets;
-using Autofac;
-using Autofac.Core;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
@@ -8,13 +5,14 @@ using TcpChat.Core.Logging;
 namespace TcpChat.Core.Network;
 public class SocketAcceptor : ISocketAcceptor
 {
-    private readonly List<Socket> _clients;
+    private readonly List<INetworkClient> _clients;
     private readonly object _threadLocker;
     private readonly IPacketHandlersContainer _packetHandlersContainer;
     private readonly IEncoder<Packet> _packetEncoder;
     private readonly ILogHandler _logger;
 
-    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, IEncoder<Packet> packetEncoder, ILogHandler logger)
+    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, IEncoder<Packet> packetEncoder, 
+        ILogHandler logger)
     {
         _clients = new ();
         _packetHandlersContainer = packetHandlersContainer;
@@ -23,7 +21,7 @@ public class SocketAcceptor : ISocketAcceptor
         _threadLocker = new ();
     }
 
-    public async Task AcceptSocketAsync(Socket socket, CancellationToken ct = default)
+    public async Task AcceptSocketAsync(INetworkClient socket, CancellationToken ct = default)
     {
         var connectionDetails = new ConnectionDetails()
         {
@@ -43,15 +41,14 @@ public class SocketAcceptor : ISocketAcceptor
         _ = Task.Run(() => ReceivePacketsAsync(socket, connectionDetails, ct));
     }
     
-    private async void ReceivePacketsAsync(Socket client, ConnectionDetails connectionDetails, CancellationToken ct = default)
+    private async void ReceivePacketsAsync(INetworkClient client, ConnectionDetails connectionDetails,
+        CancellationToken ct = default)
     {   
         try
         {
             while (!ct.IsCancellationRequested)
             {
-                var buffer = new byte[1024];
-                var received = await client.ReceiveAsync(buffer, SocketFlags.None, ct);
-                var request = _packetEncoder.Decode(buffer, received);
+                var request = await client.ReceiveResponseAsync(ct);
 
                 if (request is null)
                     continue;
@@ -76,7 +73,7 @@ public class SocketAcceptor : ISocketAcceptor
                 // and maybe here
             }
         }
-        catch (Exception exception)
+        catch
         {
             var handler = _packetHandlersContainer.ResolveDisconnectionHandler();
             
@@ -91,14 +88,14 @@ public class SocketAcceptor : ISocketAcceptor
         }
         finally
         {
-            client.Close();
+            client.Dispose();
             
             lock (_threadLocker)
                 _clients.Remove(client);
         }
     }
 
-    private async Task SendErrorAsync(Socket client, string message, CancellationToken ct = default)
+    private async Task SendErrorAsync(INetworkClient client, string message, CancellationToken ct = default)
     {
         _logger.HandleText(message);
                     
@@ -108,8 +105,7 @@ public class SocketAcceptor : ISocketAcceptor
             State = new { Message = message }
         };
 
-        var response = _packetEncoder.Encode(packet);
-        _ = await client.SendAsync(response, SocketFlags.None, ct);
+        _ = await client.SendAsync(packet, ct);
     }
     
     public void Dispose()
@@ -118,8 +114,8 @@ public class SocketAcceptor : ISocketAcceptor
         {
             for (int i = 0; i < _clients.Count; i++)
             {
-                _clients[i].Shutdown(SocketShutdown.Both);
-                _clients[i].Close();
+                _clients[i].Disconnect();
+                _clients[i].Dispose();
             }
         }
     }

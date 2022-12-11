@@ -1,9 +1,9 @@
-﻿using System.Net.Sockets;
+﻿using TcpChat.Core.Network;
 
 namespace TcpChat.Server.App.Models;
 
 public class User
 {
     public string Name { get; set; } = default!;
-    public Socket Socket { get; set; } = default!;
+    public INetworkClient Client { get; set; } = default!;
 }

@@ -23,7 +23,7 @@ public class AuthHandler : PacketHandler<AuthRequest>
         var user = new User
         {
             Name = request.Username,
-            Socket = Sender
+            Client = Sender
         };
 
         var result = _authService.Authenticate(user);

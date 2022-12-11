@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using System.Net.Sockets;
+using TcpChat.Core.Network;
 using TcpChat.Server.App.Models;
 
 namespace TcpChat.Server.App.Services;
@@ -25,11 +25,11 @@ public class AuthService : IAuthService
         return _users.TryRemove(userName, out _);
     }
 
-    public User? FindBySocket(Socket socket)
+    public User? FindBySender(INetworkClient client)
     {
         try
         {
-            var keyValuePair = _users.FirstOrDefault(u => u.Value.Socket == socket);
+            var keyValuePair = _users.FirstOrDefault(u => u.Value.Client == client);
             return keyValuePair.Value;
         }
         catch

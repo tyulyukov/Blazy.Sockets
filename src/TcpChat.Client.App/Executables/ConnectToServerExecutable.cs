@@ -1,5 +1,4 @@
-﻿using System.Net.Sockets;
-using Spectre.Console;
+﻿using Spectre.Console;
 using TcpChat.Client.App.Domain;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
@@ -36,7 +35,7 @@ public class ConnectToServerExecutable : IExecutable
                     await _client.ConnectAsync(token);
                     AnsiConsole.MarkupLine("Connected to the server");
                 }
-                catch (SocketException)
+                catch
                 {
                     AnsiConsole.MarkupLine("An [red]error[/] has occurred while connecting with server");
                     throw;

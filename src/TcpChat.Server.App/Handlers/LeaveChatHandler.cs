@@ -21,7 +21,7 @@ public class LeaveChatHandler : PacketHandler<LeaveChatRequest>
 
     public override async Task HandleAsync(LeaveChatRequest request, CancellationToken ct)
     {
-        var sender = _authService.FindBySocket(Sender);
+        var sender = _authService.FindBySender(Sender);
 
         if (sender is null)
         {
@@ -44,7 +44,7 @@ public class LeaveChatHandler : PacketHandler<LeaveChatRequest>
         
         foreach (var user in _chatService.GetUsersFromChat(request.Id, u => u.Name != sender.Name))
         {
-            await SendResponseAsync(user.Socket, new Packet
+            await SendResponseAsync(user.Client, new Packet
             {
                 Event = "User Left",
                 State = new UserLeftChatDto

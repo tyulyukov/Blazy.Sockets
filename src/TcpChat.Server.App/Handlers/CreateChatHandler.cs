@@ -22,7 +22,7 @@ public class CreateChatHandler : PacketHandler<CreateChatRequest>
 
     public override async Task HandleAsync(CreateChatRequest request, CancellationToken ct)
     {
-        var user = _authService.FindBySocket(Sender);
+        var user = _authService.FindBySender(Sender);
 
         if (user is null)
         {

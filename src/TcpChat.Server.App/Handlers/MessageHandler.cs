@@ -21,7 +21,7 @@ public class SendMessageHandler : PacketHandler<SendMessageRequest>
 
     public override async Task HandleAsync(SendMessageRequest request, CancellationToken ct)
     {
-        var sender = _authService.FindBySocket(Sender);
+        var sender = _authService.FindBySender(Sender);
 
         if (sender is null)
         {
@@ -33,7 +33,7 @@ public class SendMessageHandler : PacketHandler<SendMessageRequest>
 
         foreach (var user in users)
         {
-            await SendResponseAsync(user.Socket, new Packet()
+            await SendResponseAsync(user.Client, new Packet()
             {
                 Event = "Message",
                 State = new

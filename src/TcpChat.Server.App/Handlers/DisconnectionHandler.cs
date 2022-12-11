@@ -21,7 +21,7 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
 
     public override async Task HandleAsync(DisconnectionDetails details, CancellationToken ct)
     {
-        var sender = _authService.FindBySocket(Sender);
+        var sender = _authService.FindBySender(Sender);
         
         if (sender is not null)
         {
@@ -33,7 +33,7 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
             {
                 foreach (var user in _chatService.GetUsersFromChat(leftChat.HashId, u => u.Name != sender.Name))
                 {
-                    await SendResponseAsync(user.Socket, new Packet
+                    await SendResponseAsync(user.Client, new Packet
                     {
                         Event = "User Left",
                         State = new UserLeftChatDto

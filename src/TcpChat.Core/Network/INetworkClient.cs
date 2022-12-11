@@ -1,10 +1,13 @@
-﻿using TcpChat.Core.Contracts;
+﻿using System.Net;
+using TcpChat.Core.Contracts;
 
 namespace TcpChat.Core.Network;
 
 public interface INetworkClient : IDisposable
 {
     bool Connected { get; }
+    EndPoint? RemoteEndPoint { get; }
+    EndPoint? LocalEndPoint { get; }
     
     Task ConnectAsync(CancellationToken ct = default);
     void Disconnect();

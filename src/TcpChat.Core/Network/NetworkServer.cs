@@ -1,18 +1,22 @@
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Configuration;
+using TcpChat.Core.Contracts;
+using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
 
 namespace TcpChat.Core.Network;
 
-internal class ChatServer : INetworkServer
+internal class NetworkServer : INetworkServer
 {
     private readonly Socket _listener;
     private readonly IPEndPoint _ipEndPoint;
     private readonly ISocketAcceptor _socketAcceptor;
     private readonly ILogHandler _logger;
+    private readonly IEncoder<Packet> _packetEncoder;
 
-    public ChatServer(IConfiguration configuration, ISocketAcceptor socketAcceptor, ILogHandler logger)
+    public NetworkServer(IConfiguration configuration, ISocketAcceptor socketAcceptor, ILogHandler logger, 
+        IEncoder<Packet> packetEncoder)
     {
         var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
         var port = configuration.GetValue<int>("Connection:Port");
@@ -20,6 +24,7 @@ internal class ChatServer : INetworkServer
         _ipEndPoint = new IPEndPoint(ip, port);
         _socketAcceptor = socketAcceptor;
         _logger = logger;
+        _packetEncoder = packetEncoder;
         _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
@@ -34,14 +39,13 @@ internal class ChatServer : INetworkServer
 
             while (!ct.IsCancellationRequested)
             {
-                var client = await _listener.AcceptAsync(ct);
+                var client = new NetworkClient(await _listener.AcceptAsync(ct), _packetEncoder);
                 await _socketAcceptor.AcceptSocketAsync(client, ct);
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) when(ex is not OperationCanceledException && ex is not TaskCanceledException)
         {
-            if (ex is not OperationCanceledException && ex is not TaskCanceledException)
-                _logger.HandleError(ex);
+            _logger.HandleError(ex);
         }
         finally
         {

@@ -7,33 +7,69 @@ using TcpChat.Core.Handlers;
 
 namespace TcpChat.Core.Network;
 
-internal class ChatClient : INetworkClient
+internal class NetworkClient : INetworkClient
 {
-    public bool Connected => _client.Connected;
-    
-    private readonly IPEndPoint _endPoint; 
+    public bool Connected => _connected;
+    public EndPoint? RemoteEndPoint => _remoteEp;
+    public EndPoint? LocalEndPoint => _client.LocalEndPoint;
+
+    private bool _connected;
+    private EndPoint? _remoteEp; 
     private readonly Socket _client;
     private readonly IEncoder<Packet> _packetEncoder;
 
-    public ChatClient(IConfiguration configuration, IEncoder<Packet> packetEncoder)
+    public NetworkClient(IConfiguration configuration, IEncoder<Packet> packetEncoder)
     {
         var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
         var port = configuration.GetValue<int>("Connection:Port");
-        
+
+        _connected = false;
         _packetEncoder = packetEncoder;
-        _endPoint = new IPEndPoint(ip, port);
+        _remoteEp = new IPEndPoint(ip, port);
         _client = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
+    public NetworkClient(EndPoint remoteEp, IEncoder<Packet> packetEncoder)
+    {
+        _connected = false;
+        _remoteEp = remoteEp;
+        _client = new Socket(_remoteEp.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        _packetEncoder = packetEncoder;
+    }
+
+    public NetworkClient(Socket client, IEncoder<Packet> packetEncoder)
+    {
+        _connected = false;
+        _client = client;
+        _remoteEp = _client.RemoteEndPoint;
+        _packetEncoder = packetEncoder;
+    }
+    
     public async Task ConnectAsync(CancellationToken ct = default)
     {
-        await _client.ConnectAsync(_endPoint, ct);
+        if (_remoteEp is null)
+            throw new ArgumentNullException(nameof(_remoteEp), "Remote End Point is not set");
+        
+        await _client.ConnectAsync(_remoteEp, ct);
+        _connected = true;
     }
 
     public void Disconnect()
     {
-        if (_client.Connected)
+        try
+        {
             _client.Shutdown(SocketShutdown.Both);
+        }
+        finally
+        {
+            _connected = false;
+        }
+    }
+
+    private void DisconnectInternal()
+    {
+        Disconnect();
+        throw new SocketDisconnectedException("Server socket disconnected");
     }
 
     public async Task<Packet?> SendWithTimeOutAsync(Packet packet, TimeSpan timeout, CancellationToken ct = default)
@@ -57,8 +93,7 @@ internal class ChatClient : INetworkClient
         }
         catch
         {
-            Disconnect();
-            throw new SocketDisconnectedException();
+            DisconnectInternal();
         }
     }
 
@@ -79,8 +114,8 @@ internal class ChatClient : INetworkClient
         }
         catch
         {
-            Disconnect();
-            throw new SocketDisconnectedException("Server socket disconnected");
+            DisconnectInternal();
+            return null;
         }
     }
     
@@ -94,8 +129,8 @@ internal class ChatClient : INetworkClient
         }
         catch
         {
-            Disconnect();
-            throw new SocketDisconnectedException("Server socket disconnected");
+            DisconnectInternal();
+            return null;
         }
     }
     

@@ -15,16 +15,18 @@ public class ChatExecutable : IExecutable
 
     private readonly INetworkClient _client;
     private readonly IServerCommandParserService _commandParserService;
+    private readonly IPacketHandlersContainer _packetHandlersContainer;
 
     private string? _chatId;
     private Chat? _chat;
 
     private int _consoleRowsPassed;
     
-    public ChatExecutable(INetworkClient client, IServerCommandParserService commandParserService)
+    public ChatExecutable(INetworkClient client, IServerCommandParserService commandParserService, IPacketHandlersContainer packetHandlersContainer)
     {
         _client = client;
         _commandParserService = commandParserService;
+        _packetHandlersContainer = packetHandlersContainer;
     }
 
     public void Initialize(string chatId, Chat chat)
@@ -76,6 +78,13 @@ public class ChatExecutable : IExecutable
                 _consoleRowsPassed++;
                 Console.CursorTop += _consoleRowsPassed;
                 Console.CursorLeft = 0;
+
+                /*var handler = _packetHandlersContainer.Resolve(packet.Event);
+
+                if (handler is not null)
+                {
+                    await handler.ExecuteAsync(packet.State, _client)
+                }*/
                 
                 // here is too much duplicate code so i really need to do smth with handlers and autofac
                 switch (packet.Event)

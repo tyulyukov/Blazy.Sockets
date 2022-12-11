@@ -21,7 +21,7 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
 
     public override async Task HandleAsync(ConnectToChatRequest request, CancellationToken ct)
     {
-        var sender = _authService.FindBySocket(Sender);
+        var sender = _authService.FindBySender(Sender);
 
         if (sender is null)
         {
@@ -43,17 +43,17 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
             Event = "Connected To Chat",
             State = new
             {
-                Name = chat.Name,
+                chat.Name,
                 Creator = new
                 {
-                    Name = chat.Creator.Name
+                    chat.Creator.Name
                 }
             }
         }, ct);
 
         foreach (var user in _chatService.GetUsersFromChat(request.Id, u => u.Name != sender.Name))
         {
-            await SendResponseAsync(user.Socket, new Packet
+            await SendResponseAsync(user.Client, new Packet
             {
                 Event = "User Joined",
                 State = new

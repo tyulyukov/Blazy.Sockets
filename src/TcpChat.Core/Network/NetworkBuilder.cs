@@ -26,9 +26,9 @@ public class NetworkBuilder
         _builder.RegisterInstance(config).As<IConfiguration>();
         _builder.RegisterModule(new ConfigurationModule(config));
         
-        Use<INetworkServer, ChatServer>();
+        Use<INetworkServer, NetworkServer>();
         Use<ISocketAcceptor, SocketAcceptor>();
-        Use<INetworkClient, ChatClient>();
+        Use<INetworkClient, NetworkClient>();
         Use<IPacketHandlersContainer, PacketHandlersContainer>();
     }
 
