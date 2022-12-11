@@ -3,7 +3,7 @@ using Spectre.Console;
 using TcpChat.Client.App;
 using TcpChat.Client.App.Executables;
 using TcpChat.Client.App.Services;
-using TcpChat.Core.Application;
+using TcpChat.Core.Network;
 
 var builder = new NetworkBuilder();
 

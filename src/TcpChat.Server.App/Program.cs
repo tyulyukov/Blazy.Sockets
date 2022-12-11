@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using HashidsNet;
-using TcpChat.Core.Application;
 using TcpChat.Core.Logging;
 using TcpChat.Core.Network;
 using TcpChat.Server.App.Handlers;

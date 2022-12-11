@@ -3,15 +3,11 @@ using Autofac.Configuration;
 using Microsoft.Extensions.Configuration;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
-using TcpChat.Core.Network;
 
-namespace TcpChat.Core.Application;
+namespace TcpChat.Core.Network;
 
 public class NetworkBuilder
 {
-    public const string ConnectedEventName = "Connection";
-    public const string DisconnectedEventName = "Disconnection";
-
     private readonly List<string> _packetHandlerEvents;
     private readonly ContainerBuilder _builder;
     
@@ -33,6 +29,7 @@ public class NetworkBuilder
         Use<INetworkServer, ChatServer>();
         Use<ISocketAcceptor, SocketAcceptor>();
         Use<INetworkClient, ChatClient>();
+        Use<IPacketHandlersContainer, PacketHandlersContainer>();
     }
 
     public void Use<TInterface, TImplementation>() where TInterface : notnull where TImplementation : TInterface
@@ -69,26 +66,26 @@ public class NetworkBuilder
     
     public void UseConnectionHandler<THandler>() where THandler : PacketHandler<ConnectionDetails>
     {
-        if (_packetHandlerEvents.Contains(ConnectedEventName))
+        if (_packetHandlerEvents.Contains(PacketHandlersContainer.ConnectedEventName))
             throw new ApplicationException("Connection handler already exists");
 
         _builder.RegisterType<THandler>()
-            .Named<PacketHandler<ConnectionDetails>>(ConnectedEventName)
+            .Named<PacketHandler<ConnectionDetails>>(PacketHandlersContainer.ConnectedEventName)
             .SingleInstance();
         
-        _packetHandlerEvents.Add(ConnectedEventName);
+        _packetHandlerEvents.Add(PacketHandlersContainer.ConnectedEventName);
     }
 
     public void UseDisconnectionHandler<THandler>() where THandler : PacketHandler<DisconnectionDetails>
     {
-        if (_packetHandlerEvents.Contains(DisconnectedEventName))
+        if (_packetHandlerEvents.Contains(PacketHandlersContainer.DisconnectedEventName))
             throw new ApplicationException("Disconnection handler already exists");
 
         _builder.RegisterType<THandler>()
-            .Named<PacketHandler<DisconnectionDetails>>(DisconnectedEventName)
+            .Named<PacketHandler<DisconnectionDetails>>(PacketHandlersContainer.DisconnectedEventName)
             .SingleInstance();
         
-        _packetHandlerEvents.Add(DisconnectedEventName);
+        _packetHandlerEvents.Add(PacketHandlersContainer.DisconnectedEventName);
     }
     
     protected virtual void BeforeBuild()

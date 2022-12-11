@@ -1,25 +1,23 @@
 using System.Net.Sockets;
 using Autofac;
 using Autofac.Core;
-using TcpChat.Core.Application;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Handlers;
 using TcpChat.Core.Logging;
 
 namespace TcpChat.Core.Network;
-
 public class SocketAcceptor : ISocketAcceptor
 {
     private readonly List<Socket> _clients;
     private readonly object _threadLocker;
-    private readonly ILifetimeScope _scope;
+    private readonly IPacketHandlersContainer _packetHandlersContainer;
     private readonly IEncoder<Packet> _packetEncoder;
     private readonly ILogHandler _logger;
 
-    public SocketAcceptor(ILifetimeScope scope, IEncoder<Packet> packetEncoder, ILogHandler logger)
+    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, IEncoder<Packet> packetEncoder, ILogHandler logger)
     {
         _clients = new ();
-        _scope = scope;
+        _packetHandlersContainer = packetHandlersContainer;
         _packetEncoder = packetEncoder;
         _logger = logger;
         _threadLocker = new ();
@@ -35,7 +33,9 @@ public class SocketAcceptor : ISocketAcceptor
         lock (_threadLocker)
             _clients.Add(socket);
 
-        if (_scope.TryResolveNamed<PacketHandler<ConnectionDetails>>(NetworkBuilder.ConnectedEventName, out var handler))
+        var handler = _packetHandlersContainer.ResolveConnectionHandler();
+        
+        if (handler is not null)
         {
             await handler.HandleWithScopedSocketAsync(socket, connectionDetails, ct);
         }
@@ -59,7 +59,7 @@ public class SocketAcceptor : ISocketAcceptor
                 // TODO middlewares here
                 // _logger.HandleText($"Incoming packet from {client.RemoteEndPoint}");
 
-                var handler = _scope.ResolveOptionalNamed<IPacketHandler>(request.Event);
+                var handler = _packetHandlersContainer.Resolve(request.Event);
                 
                 if (handler is null)
                 {
@@ -78,7 +78,9 @@ public class SocketAcceptor : ISocketAcceptor
         }
         catch (Exception exception)
         {
-            if (_scope.TryResolveNamed<PacketHandler<DisconnectionDetails>>(NetworkBuilder.DisconnectedEventName, out var handler))
+            var handler = _packetHandlersContainer.ResolveDisconnectionHandler();
+            
+            if (handler is not null)
             {
                 await handler.HandleWithScopedSocketAsync(client, new DisconnectionDetails
                 {
