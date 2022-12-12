@@ -4,6 +4,7 @@ namespace TcpChat.Client.App.Models;
 
 public class Chat
 {
+    public string Id { get; set; } = default!;
     public string Name { get; set; } = default!;
     public User Creator { get; set; } = default!;
     [JsonIgnore]

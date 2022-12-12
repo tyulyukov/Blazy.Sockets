@@ -55,8 +55,10 @@ public class ConnectToChatExecutable : IExecutable
             AnsiConsole.MarkupLine($"An [red]error[/] occurred during chat deserializing");
             return;
         }
+
+        chat.Id = chatId;
         
-        _chatExe.Initialize(chatId, chat);
+        _chatExe.Initialize(chat);
         await _chatExe.ExecuteAsync(token);
     }
 }

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Spectre.Console;
 using TcpChat.Client.App.Domain;
 using TcpChat.Client.App.Models;
@@ -16,29 +15,32 @@ public class ChatExecutable : IExecutable
     private readonly INetworkClient _client;
     private readonly IServerCommandParserService _commandParserService;
     private readonly IPacketHandlersContainer _packetHandlersContainer;
+    private readonly IUserStorage _userStorage;
 
-    private string? _chatId;
     private Chat? _chat;
 
     private int _consoleRowsPassed;
     
-    public ChatExecutable(INetworkClient client, IServerCommandParserService commandParserService, IPacketHandlersContainer packetHandlersContainer)
+    public ChatExecutable(INetworkClient client, IServerCommandParserService commandParserService, 
+        IPacketHandlersContainer packetHandlersContainer, IUserStorage userStorage)
     {
         _client = client;
         _commandParserService = commandParserService;
         _packetHandlersContainer = packetHandlersContainer;
+        _userStorage = userStorage;
     }
 
-    public void Initialize(string chatId, Chat chat)
+    public void Initialize(Chat chat)
     {
-        _chatId = chatId;
         _chat = chat;
     }
     
     public Task ExecuteAsync(CancellationToken token)
     {
-        if (_chatId is null || _chat is null)
+        if (_chat is null)
             throw new ApplicationException("Executable is not initialized");
+        
+        _userStorage.JoinChat(_chat);
         
         AnsiConsole.Write(new Rule($"[yellow]{_chat.Name}[/]").LeftJustified());
         AnsiConsole.MarkupLine("[grey]Available commands:[/]");
@@ -51,6 +53,9 @@ public class ChatExecutable : IExecutable
         var sendMessagesTask = SendMessagesAsync(scopedCts.Token);
 
         Task.WaitAll(new[] { receiveMessagesTask, sendMessagesTask }, token);
+        
+        _userStorage.LeaveChat();
+        
         return Task.CompletedTask;
     }
 
@@ -60,7 +65,6 @@ public class ChatExecutable : IExecutable
         {
             while (!ct.IsCancellationRequested)
             {
-                // TODO implement asynchronous receiver with handlers in Core
                 var packet = await _client.ReceiveResponseAsync(ct);
 
                 if (packet is null) 
@@ -72,58 +76,20 @@ public class ChatExecutable : IExecutable
                     break;
                 }
 
+                var handler = _packetHandlersContainer.Resolve(packet.Event);
+
+                if (handler is null) 
+                    continue;
+                
                 var prevLeft = Console.CursorLeft;
                 var prevTop = Console.CursorTop;
 
                 _consoleRowsPassed++;
                 Console.CursorTop += _consoleRowsPassed;
                 Console.CursorLeft = 0;
-
-                /*var handler = _packetHandlersContainer.Resolve(packet.Event);
-
-                if (handler is not null)
-                {
-                    await handler.ExecuteAsync(packet.State, _client)
-                }*/
-                
-                // here is too much duplicate code so i really need to do smth with handlers and autofac
-                switch (packet.Event)
-                {
-                    case "Message":
-                    {
-                        var message = JsonSerializer.Deserialize<Message>(packet.State.ToString()!);
-
-                        if (message is null || message.Chat != _chatId)
-                            return;
                     
-                        AnsiConsole.WriteLine($"<{message.From}> {message.Content}");
-                        break;
-                    }
-                    case "User Joined":
-                    {
-                        var message = JsonSerializer.Deserialize<UserJoinedMessage>(packet.State.ToString()!);
-
-                        if (message is null || message.Chat != _chatId)
-                            return;
-
-                        AnsiConsole.MarkupLine($"[green]<{message.User}> joined the chat[/]");
-                        break;
-                    }
-                    case "User Left":
-                    {
-                        var message = JsonSerializer.Deserialize<UserLeftMessage>(packet.State.ToString()!);
-
-                        if (message is null || message.Chat != _chatId)
-                            return;
-
-                        AnsiConsole.MarkupLine(!message.Disconnected
-                            ? $"[red]<{message.User}> left the chat[/]"
-                            : $"[red]<{message.User}> disconnected[/]");
-                        break;
-                    }
-                    default: continue;
-                }
-                
+                await handler.ExecuteAsync(packet.State, _client, ct);
+                    
                 Console.CursorTop = prevTop;
                 Console.CursorLeft = prevLeft;
             }
@@ -153,7 +119,7 @@ public class ChatExecutable : IExecutable
                         Event = "Leave Chat",
                         State = new
                         {
-                            Id = _chatId,
+                            _chat?.Id,
                         }
                     }, ct);
                     break;
@@ -170,7 +136,7 @@ public class ChatExecutable : IExecutable
                     Event = "Message",
                     State = new
                     {
-                        Chat = _chatId,
+                        Chat = _chat?.Id,
                         Message = message
                     }
                 }, ct);

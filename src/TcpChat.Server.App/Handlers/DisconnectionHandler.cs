@@ -31,7 +31,7 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
 
             foreach (var leftChat in leftChats)
             {
-                foreach (var user in _chatService.GetUsersFromChat(leftChat.HashId, u => u.Name != sender.Name))
+                foreach (var user in _chatService.GetUsersFromChat(leftChat.Id, u => u.Name != sender.Name))
                 {
                     await SendResponseAsync(user.Client, new Packet
                     {
@@ -39,7 +39,7 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
                         State = new UserLeftChatDto
                         {
                             User = sender.Name,
-                            Chat = leftChat.HashId,
+                            Chat = leftChat.Id,
                             Disconnected = true
                         }
                     }, ct);

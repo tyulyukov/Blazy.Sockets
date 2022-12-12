@@ -1,5 +1,7 @@
 ﻿using Spectre.Console;
 using TcpChat.Client.App.Domain;
+using TcpChat.Client.App.Models;
+using TcpChat.Client.App.Services;
 using TcpChat.Core.Contracts;
 using TcpChat.Core.Exceptions;
 using TcpChat.Core.Network;
@@ -11,13 +13,15 @@ public class ConnectToServerExecutable : IExecutable
     public string RepresentationText => "Connect to the server";
 
     private readonly INetworkClient _client;
+    private readonly IUserStorage _userStorage;
     private readonly ConnectToChatExecutable _connectToChatExe;
     private readonly CreateMyChatExecutable _createMyChatExe;
 
-    public ConnectToServerExecutable(INetworkClient client, 
+    public ConnectToServerExecutable(INetworkClient client, IUserStorage userStorage,
         ConnectToChatExecutable connectToChatExe, CreateMyChatExecutable createMyChatExe)
     {
         _client = client;
+        _userStorage = userStorage;
         _connectToChatExe = connectToChatExe;
         _createMyChatExe = createMyChatExe;
     }
@@ -107,6 +111,7 @@ public class ConnectToServerExecutable : IExecutable
         }
         finally
         {
+            _userStorage.LogOut();
             AnsiConsole.WriteLine("Execution stopped");
         }
     }
@@ -122,6 +127,11 @@ public class ConnectToServerExecutable : IExecutable
             }
         }, ct);
 
-        return response is not null && response.Event == "Authenticated";
+        var authenticated = response is not null && response.Event == "Authenticated";
+        
+        if (authenticated)
+            _userStorage.Authenticate(new User() { Name = username });
+
+        return authenticated;
     }
 }

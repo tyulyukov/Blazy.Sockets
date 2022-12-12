@@ -21,9 +21,9 @@ public class ChatService : IChatService
     public string? CreateChat(Chat chat)
     {
         var id = _id.Value;
-        chat.HashId = _hashids.Encode(id);
+        chat.Id = _hashids.Encode(id);
         
-        return !_chats.TryAdd(id, chat) ? null : chat.HashId;
+        return !_chats.TryAdd(id, chat) ? null : chat.Id;
     }
 
     public bool DeleteChat(string hashId, User user)

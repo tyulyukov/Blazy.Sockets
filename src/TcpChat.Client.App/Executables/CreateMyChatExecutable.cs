@@ -58,7 +58,9 @@ public class CreateMyChatExecutable : IExecutable
         AnsiConsole.MarkupLine($"Chat {chatName} created with id [yellow]{response.State}[/]");
         AnsiConsole.MarkupLine("[grey]Share this id to chat with someone[/]");
 
-        _chatExe.Initialize(response.State.ToString()!, chat);
+        chat.Id = response.State.ToString()!;
+        
+        _chatExe.Initialize(chat);
         await _chatExe.ExecuteAsync(token);
     }
 }
