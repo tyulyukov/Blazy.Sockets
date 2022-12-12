@@ -28,6 +28,16 @@ internal class NetworkServer : INetworkServer
         _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
+    public NetworkServer(IPEndPoint endPoint, ISocketAcceptor socketAcceptor, ILogHandler logger, 
+        IEncoder<Packet> packetEncoder)
+    {
+        _ipEndPoint = endPoint;
+        _socketAcceptor = socketAcceptor;
+        _logger = logger;
+        _packetEncoder = packetEncoder;
+        _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+    }
+
     public async Task RunAsync(CancellationToken ct = default)
     {
         try
