@@ -4,16 +4,17 @@ using Blazy.Sockets.Logging;
 using Blazy.Sockets.Sample.Server.Dto;
 using Blazy.Sockets.Sample.Server.Models;
 using Blazy.Sockets.Sample.Server.Services;
+using Serilog;
 
 namespace Blazy.Sockets.Sample.Server.Handlers;
 
 public class CreateChatHandler : PacketHandler<CreateChatRequest>
 {
-    private readonly ILogHandler _logger;
+    private readonly ILogger _logger;
     private readonly IChatService _chatService;
     private readonly IAuthService _authService;
 
-    public CreateChatHandler(IEncoder<Packet> packetEncoder, IChatService chatService, IAuthService authService, ILogHandler logger) : base(packetEncoder)
+    public CreateChatHandler(IEncoder<Packet> packetEncoder, IChatService chatService, IAuthService authService, ILogger logger) : base(packetEncoder)
     {
         _chatService = chatService;
         _authService = authService;
@@ -45,7 +46,7 @@ public class CreateChatHandler : PacketHandler<CreateChatRequest>
             return;
         }
         
-        _logger.HandleText($"Chat {chat.Name} with id {id} was created by {user.Name}");
+        _logger.Information("Chat {ChatName} with id {ChatId} was created by {Username}", chat.Name, id, user.Name);
         await SendResponseAsync(new Packet
         {
             Event = "Chat Created",

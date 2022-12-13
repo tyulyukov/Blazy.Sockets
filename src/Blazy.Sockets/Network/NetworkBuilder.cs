@@ -46,6 +46,11 @@ public class NetworkBuilder
     {
         _builder.RegisterInstance(instance).AsSelf().SingleInstance();
     }
+    
+    public void Use<TInterface, TInstance>(TInstance instance) where TInstance : class where TInterface : notnull
+    {
+        _builder.RegisterInstance(instance).As<TInterface>().SingleInstance();
+    }
 
     public void UsePacketHandler<THandler>(string eventName) where THandler : IPacketHandler
     {

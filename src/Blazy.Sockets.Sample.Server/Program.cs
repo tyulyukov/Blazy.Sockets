@@ -6,7 +6,7 @@ using Blazy.Sockets.Sample.Server.Services;
 using HashidsNet;
 
 var builder = new NetworkBuilder();
-builder.Use<ILogHandler, LogHandler>();
+builder.UseDefaultLogger();
 builder.Use(new Hashids(DateTime.UtcNow.ToString(), 5));
 
 builder.Use<IChatService, ChatService>();

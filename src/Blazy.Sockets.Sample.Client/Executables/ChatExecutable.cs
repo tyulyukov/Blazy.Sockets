@@ -1,5 +1,6 @@
 using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Exceptions;
+using Blazy.Sockets.Handlers;
 using Blazy.Sockets.Network;
 using Blazy.Sockets.Sample.Client.Domain;
 using Blazy.Sockets.Sample.Client.Models;

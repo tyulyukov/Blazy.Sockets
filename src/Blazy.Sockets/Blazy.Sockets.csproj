@@ -10,6 +10,8 @@
       <PackageReference Include="Autofac" Version="6.5.0" />
       <PackageReference Include="Autofac.Configuration" Version="6.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
+      <PackageReference Include="Serilog" Version="2.12.1-dev-01621" />
+      <PackageReference Include="Serilog.Sinks.Console" Version="4.1.1-dev-00896" />
     </ItemGroup>
 
 </Project>

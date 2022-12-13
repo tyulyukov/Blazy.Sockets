@@ -3,16 +3,17 @@ using Blazy.Sockets.Handlers;
 using Blazy.Sockets.Logging;
 using Blazy.Sockets.Sample.Server.Dto;
 using Blazy.Sockets.Sample.Server.Services;
+using Serilog;
 
 namespace Blazy.Sockets.Sample.Server.Handlers;
 
 public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
 {
-    private readonly ILogHandler _logger;
+    private readonly ILogger _logger;
     private readonly IAuthService _authService;
     private readonly IChatService _chatService;
 
-    public DisconnectionHandler(IEncoder<Packet> packetEncoder, ILogHandler logger, IAuthService authService, IChatService chatService) : base(packetEncoder)
+    public DisconnectionHandler(IEncoder<Packet> packetEncoder, ILogger logger, IAuthService authService, IChatService chatService) : base(packetEncoder)
     {
         _logger = logger;
         _authService = authService;
@@ -49,21 +50,21 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
             switch (leftChats.Count)
             {
                 case 0:
-                    _logger.HandleText($"{sender.Name} was not connected to any chat while disconnecting");
+                    _logger.Information("{Username} was not connected to any chat while disconnecting", sender.Name);
                     break;
                 case 1:
-                    _logger.HandleText($"{sender.Name} left {leftChats[0].Name} chat due to disconnection");
+                    _logger.Information("{Username} left {ChatName} chat due to disconnection", sender.Name, leftChats[0].Name);
                     break;
                 case > 1:
-                    _logger.HandleText($"{sender.Name} left {leftChats.Count} chats due to disconnection");
+                    _logger.Information("{Username} left {ChatsCount} chats due to disconnection", sender.Name, leftChats.Count);
                     break;
             }
             
-            _logger.HandleText($"Disconnected user {sender.Name} Connection Elapsed: {details.ConnectionTime}");
+            _logger.Information("Disconnected user {Username} Connection Elapsed: {ConnectionTime}", sender.Name, details.ConnectionTime);
         }
         else
         {
-            _logger.HandleText($"Disconnected {Sender.RemoteEndPoint} Connection Elapsed: {details.ConnectionTime}");
+            _logger.Information("Disconnected {RemoteEndPoint} Connection Elapsed: {ConnectionTime}", Sender.RemoteEndPoint, details.ConnectionTime);
         }
     }
 }

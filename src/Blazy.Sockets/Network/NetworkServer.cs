@@ -4,6 +4,7 @@ using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Handlers;
 using Blazy.Sockets.Logging;
 using Microsoft.Extensions.Configuration;
+using Serilog;
 
 namespace Blazy.Sockets.Network;
 
@@ -12,10 +13,10 @@ internal class NetworkServer : INetworkServer
     private readonly Socket _listener;
     private readonly IPEndPoint _ipEndPoint;
     private readonly ISocketAcceptor _socketAcceptor;
-    private readonly ILogHandler _logger;
+    private readonly ILogger _logger;
     private readonly IEncoder<Packet> _packetEncoder;
 
-    public NetworkServer(IConfiguration configuration, ISocketAcceptor socketAcceptor, ILogHandler logger, 
+    public NetworkServer(IConfiguration configuration, ISocketAcceptor socketAcceptor, ILogger logger, 
         IEncoder<Packet> packetEncoder)
     {
         var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
@@ -28,7 +29,7 @@ internal class NetworkServer : INetworkServer
         _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
-    public NetworkServer(IPEndPoint endPoint, ISocketAcceptor socketAcceptor, ILogHandler logger, 
+    public NetworkServer(IPEndPoint endPoint, ISocketAcceptor socketAcceptor, ILogger logger, 
         IEncoder<Packet> packetEncoder)
     {
         _ipEndPoint = endPoint;
@@ -45,7 +46,7 @@ internal class NetworkServer : INetworkServer
             _listener.Bind(_ipEndPoint);
             _listener.Listen(100);
 
-            _logger.HandleText($"Server is running on {_ipEndPoint.Port} port");
+            _logger.Information("Server is running on {Port} port", _ipEndPoint.Port);
 
             while (!ct.IsCancellationRequested)
             {
@@ -55,11 +56,11 @@ internal class NetworkServer : INetworkServer
         }
         catch (Exception ex) when(ex is not OperationCanceledException && ex is not TaskCanceledException)
         {
-            _logger.HandleError(ex);
+            _logger.Fatal(ex, ex.Message);
         }
         finally
         {
-            _logger.HandleText("Server stopped");
+            _logger.Information("Server stopped");
         }
     }
 

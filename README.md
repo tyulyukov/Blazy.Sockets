@@ -87,5 +87,6 @@ var response = await client.SendAsync(new Packet
 ```
 
 ## 📈 Plans for:
-- ILogger from MS instead of rough ILogHandler
 - Middlewares
+- Refactor PacketHandler
+- Command Parser

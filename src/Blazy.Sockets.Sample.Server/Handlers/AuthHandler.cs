@@ -4,15 +4,16 @@ using Blazy.Sockets.Logging;
 using Blazy.Sockets.Sample.Server.Dto;
 using Blazy.Sockets.Sample.Server.Models;
 using Blazy.Sockets.Sample.Server.Services;
+using Serilog;
 
 namespace Blazy.Sockets.Sample.Server.Handlers;
 
 public class AuthHandler : PacketHandler<AuthRequest>
 {
-    private readonly ILogHandler _logger;
+    private readonly ILogger _logger;
     private readonly IAuthService _authService;
 
-    public AuthHandler(ILogHandler logger, IEncoder<Packet> packetEncoder, IAuthService authService) : base(packetEncoder)
+    public AuthHandler(ILogger logger, IEncoder<Packet> packetEncoder, IAuthService authService) : base(packetEncoder)
     {
         _logger = logger;
         _authService = authService;
@@ -34,7 +35,7 @@ public class AuthHandler : PacketHandler<AuthRequest>
             return;
         }
         
-        _logger.HandleText($"{Sender.RemoteEndPoint} authenticated as {user.Name}");
+        _logger.Information("{RemoteEndPoint} authenticated as {Username}", Sender.RemoteEndPoint, user.Name);
         await SendResponseAsync(new Packet
         {
             Event = "Authenticated",

@@ -1,18 +1,18 @@
 ﻿using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Handlers;
-using Blazy.Sockets.Logging;
 using Blazy.Sockets.Sample.Server.Dto;
 using Blazy.Sockets.Sample.Server.Services;
+using Serilog;
 
 namespace Blazy.Sockets.Sample.Server.Handlers;
 
 public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
 {
-    private readonly ILogHandler _logger;
+    private readonly ILogger _logger;
     private readonly IAuthService _authService;
     private readonly IChatService _chatService;
 
-    public ConnectToChatHandler(IEncoder<Packet> packetEncoder, IAuthService authService, IChatService chatService, ILogHandler logger) : base(packetEncoder)
+    public ConnectToChatHandler(IEncoder<Packet> packetEncoder, IAuthService authService, IChatService chatService, ILogger logger) : base(packetEncoder)
     {
         _authService = authService;
         _chatService = chatService;
@@ -37,7 +37,7 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
             return;
         }
 
-        _logger.HandleText($"{sender.Name} connected to chat {chat.Name} with id {request.Id}");
+        _logger.Information("{Username} connected to chat {ChatName} with id {ChatId}", sender.Name, chat.Name, request.Id);
         await SendResponseAsync(new Packet()
         {
             Event = "Connected To Chat",

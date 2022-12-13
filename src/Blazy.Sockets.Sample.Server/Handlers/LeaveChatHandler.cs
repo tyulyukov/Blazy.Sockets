@@ -3,16 +3,17 @@ using Blazy.Sockets.Handlers;
 using Blazy.Sockets.Logging;
 using Blazy.Sockets.Sample.Server.Dto;
 using Blazy.Sockets.Sample.Server.Services;
+using Serilog;
 
 namespace Blazy.Sockets.Sample.Server.Handlers;
 
 public class LeaveChatHandler : PacketHandler<LeaveChatRequest>
 {
-    private readonly ILogHandler _logger;
+    private readonly ILogger _logger;
     private readonly IAuthService _authService;
     private readonly IChatService _chatService;
 
-    public LeaveChatHandler(IEncoder<Packet> packetEncoder, IAuthService authService, IChatService chatService, ILogHandler logger) : base(packetEncoder)
+    public LeaveChatHandler(IEncoder<Packet> packetEncoder, IAuthService authService, IChatService chatService, ILogger logger) : base(packetEncoder)
     {
         _authService = authService;
         _chatService = chatService;
@@ -35,7 +36,7 @@ public class LeaveChatHandler : PacketHandler<LeaveChatRequest>
             return;
         }
 
-        _logger.HandleText($"{sender.Name} has left chat {request.Id}");
+        _logger.Information("{Username} has left chat {ChatId}", sender.Name, request.Id);
         await SendResponseAsync(new Packet()
         {
             Event = "Left Chat",

@@ -1,6 +1,7 @@
 using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Handlers;
 using Blazy.Sockets.Logging;
+using Serilog;
 
 namespace Blazy.Sockets.Network;
 public class SocketAcceptor : ISocketAcceptor
@@ -8,15 +9,13 @@ public class SocketAcceptor : ISocketAcceptor
     private readonly List<INetworkClient> _clients;
     private readonly object _threadLocker;
     private readonly IPacketHandlersContainer _packetHandlersContainer;
-    private readonly IEncoder<Packet> _packetEncoder;
-    private readonly ILogHandler _logger;
+    private readonly ILogger _logger;
 
-    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, IEncoder<Packet> packetEncoder, 
-        ILogHandler logger)
+    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, 
+        ILogger logger)
     {
         _clients = new ();
         _packetHandlersContainer = packetHandlersContainer;
-        _packetEncoder = packetEncoder;
         _logger = logger;
         _threadLocker = new ();
     }
@@ -97,7 +96,7 @@ public class SocketAcceptor : ISocketAcceptor
 
     private async Task SendErrorAsync(INetworkClient client, string message, CancellationToken ct = default)
     {
-        _logger.HandleText(message);
+        _logger.Debug(message);
                     
         var packet = new Packet
         {

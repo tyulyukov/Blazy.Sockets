@@ -1,7 +1,6 @@
 using Blazy.Sockets.Contracts;
-using Blazy.Sockets.Handlers;
 
-namespace Blazy.Sockets.Network;
+namespace Blazy.Sockets.Handlers;
 
 public interface IPacketHandlersContainer
 {
