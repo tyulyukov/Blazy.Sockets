@@ -8,9 +8,9 @@ Full documentation would be published soon
 
 > 🚧 Project is still in progress... (ofc you can fork this project and build your sample)
 
-![Main menu](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/1.png)
-![Client](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/2.png)
-![Server](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/3.png)
+![Main menu](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/main1.png)
+![Client](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/chat1.png)
+![Server](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/server1.png)
 
 ## Small sample of using this framework:
 
