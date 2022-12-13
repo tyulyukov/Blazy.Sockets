@@ -1,17 +1,16 @@
 [![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-single.svg)](https://stand-with-ukraine.pp.ua)
 
-# Tcp Chat
-`Small sockets framework with console chat sample`
+# Blazy Sockets
+`Sockets Framework for building modern apps`
 
-Small event based sockets framework which works on Tcp protocol. I am inspired by socket.io and FastEndpoints. You can implement ur own Packet Handler (also for Connection and Disconnection)
-
-How ridiculous it is, but i still cant send messages in my sample xD.
+Event-based sockets framework (TCP only). Actually, I was inspired by socket.io and FastEndpoints so there are loads of similarities.
+Full documentation would be published soon
 
 > 🚧 Project is still in progress... (ofc you can fork this project and build your sample)
 
-![Main menu](https://github.com/tyulyukov/TcpChat/blob/master/docs/assets/1.png)
-![Client](https://github.com/tyulyukov/TcpChat/blob/master/docs/assets/2.png)
-![Server](https://github.com/tyulyukov/TcpChat/blob/master/docs/assets/3.png)
+![Main menu](https://github.com/tyulyukov/blazy-sockets/blob/master/docs/assets/1.png)
+![Client](https://github.com/tyulyukov/blazy-sockets/blob/master/docs/assets/2.png)
+![Server](https://github.com/tyulyukov/blazy-sockets/blob/master/docs/assets/3.png)
 
 ## Small example of TcpChat.Core:
 
@@ -57,23 +56,23 @@ public class AuthHandler : PacketHandler<AuthRequest>
 ```
 
 
-#### 2. Register packet handler in in Program.cs
+#### 2. Register packet handler in Program.cs
 ```csharp
-var builder = new ChatServerBuilder();
+var builder = new NetworkBuilder();
 
 builder.Use<IAuthService, AuthService>();
 builder.UsePacketHandler<AuthHandler>("Auth");
 
 using var app = builder.Build();
-var server = app.Resolve();
+var server = app.Resolve<INetworkServer>();
 await server.RunAsync();
 ```
 
 #### 3. Send packet with this event name. And that`s it!
 ```csharp
-var builder = new ChatClientBuilder();
+var builder = new NetworkBuilder();
 using var app = builder.Build();
-var client = app.Resolve();
+var client = app.Resolve<INetworkClient>();
 
 await client.ConnectAsync(ct);
 
