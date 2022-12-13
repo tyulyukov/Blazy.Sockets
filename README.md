@@ -12,9 +12,9 @@ Full documentation would be published soon
 ![Client](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/2.png)
 ![Server](https://github.com/tyulyukov/Blazy.Sockets/blob/master/docs/assets/3.png)
 
-## Small example of TcpChat.Core:
+## Small sample of using this framework:
 
-#### 1. First, create packet handler with request dto (yeah they look like Endpoint)
+#### 1. First, create packet handler with request dto
 ```csharp
 public class AuthRequest
 {
