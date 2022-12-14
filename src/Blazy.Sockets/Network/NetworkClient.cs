@@ -11,7 +11,7 @@ namespace Blazy.Sockets.Network;
 internal class NetworkClient : INetworkClient
 {
     public bool Connected => _connected;
-    public EndPoint? RemoteEndPoint => _remoteEp;
+    public EndPoint? RemoteEndPoint => _remoteEp ?? _client.RemoteEndPoint;
     public EndPoint? LocalEndPoint => _client.LocalEndPoint;
 
     private bool _connected;
@@ -19,30 +19,23 @@ internal class NetworkClient : INetworkClient
     private readonly Socket _client;
     private readonly IEncoder _encoder;
 
-    public NetworkClient(IConfiguration configuration, IEncoder encoder)
-    {
-        var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
-        var port = configuration.GetValue<int>("Connection:Port");
+    public NetworkClient(IConfiguration configuration, IEncoder encoder) : this(
+        new IPEndPoint(
+            IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress")),
+            configuration.GetValue<int>("Connection:Port")
+        ), encoder) { }
 
-        _connected = false;
-        _encoder = encoder;
-        _remoteEp = new IPEndPoint(ip, port);
-        _client = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-    }
-
-    public NetworkClient(EndPoint remoteEp, IEncoder encoder)
+    public NetworkClient(EndPoint remoteEp, IEncoder encoder) : this(
+        new Socket(remoteEp.AddressFamily, SocketType.Stream, ProtocolType.Tcp),
+        encoder)
     {
-        _connected = false;
         _remoteEp = remoteEp;
-        _client = new Socket(_remoteEp.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        _encoder = encoder;
     }
 
     public NetworkClient(Socket client, IEncoder encoder)
     {
         _connected = false;
         _client = client;
-        _remoteEp = _client.RemoteEndPoint;
         _encoder = encoder;
     }
     

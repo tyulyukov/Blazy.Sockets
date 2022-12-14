@@ -18,17 +18,12 @@ internal class NetworkServer : INetworkServer
     private readonly IEncoder _encoder;
 
     public NetworkServer(IConfiguration configuration, ISocketAcceptor socketAcceptor, ILogger logger, 
-        IEncoder encoder)
-    {
-        var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
-        var port = configuration.GetValue<int>("Connection:Port");
-        
-        _ipEndPoint = new IPEndPoint(ip, port);
-        _socketAcceptor = socketAcceptor;
-        _logger = logger;
-        _encoder = encoder;
-        _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-    }
+        IEncoder encoder) : this(
+        new IPEndPoint(
+            IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress")),
+            configuration.GetValue<int>("Connection:Port")
+            ), 
+        socketAcceptor, logger, encoder) { }
 
     public NetworkServer(IPEndPoint endPoint, ISocketAcceptor socketAcceptor, ILogger logger, 
         IEncoder encoder)
