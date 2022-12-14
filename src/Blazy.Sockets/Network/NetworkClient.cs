@@ -3,7 +3,6 @@ using System.Net.Sockets;
 using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Exceptions;
-using Blazy.Sockets.Handlers;
 using Microsoft.Extensions.Configuration;
 
 namespace Blazy.Sockets.Network;

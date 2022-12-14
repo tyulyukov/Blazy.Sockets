@@ -3,6 +3,7 @@ using Autofac.Configuration;
 using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Handlers;
+using Blazy.Sockets.Middlewares;
 using Microsoft.Extensions.Configuration;
 
 namespace Blazy.Sockets.Network;
@@ -11,6 +12,8 @@ public class NetworkBuilder
 {
     private readonly List<string> _packetHandlerEvents;
     private readonly ContainerBuilder _builder;
+
+    private PacketDelegate _middleware; 
     
     public NetworkBuilder() : this("appsettings.json") { }
 
@@ -30,6 +33,9 @@ public class NetworkBuilder
         Use<ISocketAcceptor, SocketAcceptor>();
         Use<INetworkClient, NetworkClient>();
         Use<IPacketHandlersContainer, PacketHandlersContainer>();
+        Use<IRequestHandler, RequestHandler>();
+        
+        // _middleware = 
     }
 
     public void Use<TInterface, TImplementation>() where TInterface : notnull where TImplementation : TInterface
@@ -62,13 +68,6 @@ public class NetworkBuilder
             .SingleInstance();
 
         _packetHandlerEvents.Add(eventName);
-    }
-
-    public void UseMiddleware<TMiddleware>() where TMiddleware : IMiddleware
-    {
-        _builder.RegisterType<TMiddleware>()
-            .As<IMiddleware>()
-            .SingleInstance();
     }
     
     public void UseConnectionHandler<THandler>() where THandler : PacketHandler<ConnectionDetails>

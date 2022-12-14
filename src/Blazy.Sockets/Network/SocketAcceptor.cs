@@ -1,6 +1,5 @@
 using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Handlers;
-using Serilog;
 
 namespace Blazy.Sockets.Network;
 public class SocketAcceptor : ISocketAcceptor
@@ -8,14 +7,13 @@ public class SocketAcceptor : ISocketAcceptor
     private readonly List<INetworkClient> _clients;
     private readonly object _threadLocker;
     private readonly IPacketHandlersContainer _packetHandlersContainer;
-    private readonly ILogger _logger;
+    private readonly IRequestHandler _requestHandler;
 
-    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, 
-        ILogger logger)
+    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, IRequestHandler requestHandler)
     {
         _clients = new ();
         _packetHandlersContainer = packetHandlersContainer;
-        _logger = logger;
+        _requestHandler = requestHandler;
         _threadLocker = new ();
     }
 
@@ -51,21 +49,7 @@ public class SocketAcceptor : ISocketAcceptor
                 if (request is null)
                     continue;
 
-                // TODO middlewares here
-
-                var handler = _packetHandlersContainer.Resolve(request.Event);
-                
-                if (handler is null)
-                {
-                    var message = $"Handler was not found for {request.Event} event";
-                    await SendErrorAsync(client, message, ct);
-                    continue;
-                }
-                
-                // log "Packet from {client.RemoteEndPoint} handled by {handler.GetType()}"
-
-                // TODO errors middleware
-                await handler.ExecuteAsync(request.State, client, ct);
+                await _requestHandler.HandleRequestAsync(request, client, ct);
             }
         }
         catch
@@ -90,17 +74,6 @@ public class SocketAcceptor : ISocketAcceptor
         }
     }
 
-    private async Task SendErrorAsync(INetworkClient client, string message, CancellationToken ct = default)
-    {         
-        var packet = new Packet
-        {
-            Event = "Error",
-            State = new { Message = message }
-        };
-
-        _ = await client.SendAsync(packet, ct);
-    }
-    
     public void Dispose()
     {
         lock (_threadLocker)
