@@ -10,7 +10,7 @@ public class MessageHandler : PacketHandler<Message>
 {
     private readonly IUserStorage _userStorage;
 
-    public MessageHandler(IEncoder<Packet> packetEncoder, IUserStorage userStorage) : base(packetEncoder)
+    public MessageHandler(IUserStorage userStorage)
     {
         _userStorage = userStorage;
     }

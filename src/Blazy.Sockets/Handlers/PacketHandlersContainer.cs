@@ -5,9 +5,6 @@ namespace Blazy.Sockets.Handlers;
 
 public class PacketHandlersContainer : IPacketHandlersContainer
 {
-    public const string ConnectedEventName = "Connection";
-    public const string DisconnectedEventName = "Disconnection";
-    
     private readonly ILifetimeScope _scope;
 
     public PacketHandlersContainer(ILifetimeScope scope)
@@ -22,11 +19,11 @@ public class PacketHandlersContainer : IPacketHandlersContainer
 
     public PacketHandler<ConnectionDetails>? ResolveConnectionHandler()
     {
-        return _scope.ResolveOptionalNamed<PacketHandler<ConnectionDetails>>(ConnectedEventName);
+        return _scope.ResolveOptional<PacketHandler<ConnectionDetails>>();
     }
 
     public PacketHandler<DisconnectionDetails>? ResolveDisconnectionHandler()
     {
-        return _scope.ResolveOptionalNamed<PacketHandler<DisconnectionDetails>>(DisconnectedEventName);
+        return _scope.ResolveOptional<PacketHandler<DisconnectionDetails>>();
     }
 }

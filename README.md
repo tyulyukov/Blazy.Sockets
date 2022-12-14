@@ -25,7 +25,7 @@ public class AuthHandler : PacketHandler<AuthRequest>
 {
     private readonly IAuthService _authService;
 
-    public AuthHandler(IEncoder<Packet> packetEncoder, IAuthService authService) : base(packetEncoder)
+    public AuthHandler(IAuthService authService)
     {
         _logger = logger;
         _authService = authService;
@@ -38,9 +38,9 @@ public class AuthHandler : PacketHandler<AuthRequest>
             Name = request.Username
         };
 
-        var result = _authService.Authenticate(user);
+        var authenticated = _authService.Authenticate(user);
 
-        if (!result)
+        if (!authenticated)
         {
             await SendErrorAsync("Username is already taken", ct);
             return;
@@ -88,5 +88,4 @@ var response = await client.SendAsync(new Packet
 
 ## 📈 Plans for:
 - Middlewares
-- Refactor PacketHandler
 - Command Parser

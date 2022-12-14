@@ -10,7 +10,7 @@ public class UserJoinedHandler : PacketHandler<UserJoinedMessage>
 {
     private readonly IUserStorage _userStorage;
 
-    public UserJoinedHandler(IEncoder<Packet> packetEncoder, IUserStorage userStorage) : base(packetEncoder)
+    public UserJoinedHandler(IUserStorage userStorage)
     {
         _userStorage = userStorage;
     }

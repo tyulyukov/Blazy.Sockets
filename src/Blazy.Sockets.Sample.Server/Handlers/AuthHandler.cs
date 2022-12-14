@@ -13,7 +13,7 @@ public class AuthHandler : PacketHandler<AuthRequest>
     private readonly ILogger _logger;
     private readonly IAuthService _authService;
 
-    public AuthHandler(ILogger logger, IEncoder<Packet> packetEncoder, IAuthService authService) : base(packetEncoder)
+    public AuthHandler(ILogger logger, IAuthService authService)
     {
         _logger = logger;
         _authService = authService;

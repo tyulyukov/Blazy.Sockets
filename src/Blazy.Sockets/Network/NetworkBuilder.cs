@@ -11,7 +11,6 @@ public class NetworkBuilder
     private readonly List<string> _packetHandlerEvents;
     private readonly ContainerBuilder _builder;
     
-
     public NetworkBuilder() : this("appsettings.json") { }
 
     public NetworkBuilder(string configPath)
@@ -66,31 +65,23 @@ public class NetworkBuilder
 
     public void UseMiddleware<TMiddleware>() where TMiddleware : IMiddleware
     {
-        _builder.RegisterType<TMiddleware>().As<IMiddleware>().SingleInstance();
+        _builder.RegisterType<TMiddleware>()
+            .As<IMiddleware>()
+            .SingleInstance();
     }
     
     public void UseConnectionHandler<THandler>() where THandler : PacketHandler<ConnectionDetails>
     {
-        if (_packetHandlerEvents.Contains(PacketHandlersContainer.ConnectedEventName))
-            throw new ApplicationException("Connection handler already exists");
-
         _builder.RegisterType<THandler>()
-            .Named<PacketHandler<ConnectionDetails>>(PacketHandlersContainer.ConnectedEventName)
+            .As<PacketHandler<ConnectionDetails>>()
             .SingleInstance();
-        
-        _packetHandlerEvents.Add(PacketHandlersContainer.ConnectedEventName);
     }
 
     public void UseDisconnectionHandler<THandler>() where THandler : PacketHandler<DisconnectionDetails>
     {
-        if (_packetHandlerEvents.Contains(PacketHandlersContainer.DisconnectedEventName))
-            throw new ApplicationException("Disconnection handler already exists");
-
         _builder.RegisterType<THandler>()
-            .Named<PacketHandler<DisconnectionDetails>>(PacketHandlersContainer.DisconnectedEventName)
+            .As<PacketHandler<DisconnectionDetails>>()
             .SingleInstance();
-        
-        _packetHandlerEvents.Add(PacketHandlersContainer.DisconnectedEventName);
     }
     
     protected virtual void BeforeBuild()

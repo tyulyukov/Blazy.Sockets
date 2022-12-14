@@ -13,7 +13,7 @@ public class SendMessageHandler : PacketHandler<SendMessageRequest>
     private readonly IChatService _chatService;
     private readonly ILogger _logger;
 
-    public SendMessageHandler(IEncoder<Packet> packetEncoder, IAuthService authService, IChatService chatService, ILogger logger) : base(packetEncoder)
+    public SendMessageHandler(IAuthService authService, IChatService chatService, ILogger logger)
     {
         _authService = authService;
         _chatService = chatService;

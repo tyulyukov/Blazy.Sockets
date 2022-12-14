@@ -14,7 +14,7 @@ public class CreateChatHandler : PacketHandler<CreateChatRequest>
     private readonly IChatService _chatService;
     private readonly IAuthService _authService;
 
-    public CreateChatHandler(IEncoder<Packet> packetEncoder, IChatService chatService, IAuthService authService, ILogger logger) : base(packetEncoder)
+    public CreateChatHandler(IChatService chatService, IAuthService authService, ILogger logger)
     {
         _chatService = chatService;
         _authService = authService;

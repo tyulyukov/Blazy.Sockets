@@ -12,7 +12,7 @@ public class ConnectToChatHandler : PacketHandler<ConnectToChatRequest>
     private readonly IAuthService _authService;
     private readonly IChatService _chatService;
 
-    public ConnectToChatHandler(IEncoder<Packet> packetEncoder, IAuthService authService, IChatService chatService, ILogger logger) : base(packetEncoder)
+    public ConnectToChatHandler(IAuthService authService, IChatService chatService, ILogger logger)
     {
         _authService = authService;
         _chatService = chatService;

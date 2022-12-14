@@ -13,7 +13,7 @@ public class DisconnectionHandler : PacketHandler<DisconnectionDetails>
     private readonly IAuthService _authService;
     private readonly IChatService _chatService;
 
-    public DisconnectionHandler(IEncoder<Packet> packetEncoder, ILogger logger, IAuthService authService, IChatService chatService) : base(packetEncoder)
+    public DisconnectionHandler(ILogger logger, IAuthService authService, IChatService chatService)
     {
         _logger = logger;
         _authService = authService;

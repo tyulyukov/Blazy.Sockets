@@ -13,7 +13,7 @@ public class LeaveChatHandler : PacketHandler<LeaveChatRequest>
     private readonly IAuthService _authService;
     private readonly IChatService _chatService;
 
-    public LeaveChatHandler(IEncoder<Packet> packetEncoder, IAuthService authService, IChatService chatService, ILogger logger) : base(packetEncoder)
+    public LeaveChatHandler(IAuthService authService, IChatService chatService, ILogger logger)
     {
         _authService = authService;
         _chatService = chatService;

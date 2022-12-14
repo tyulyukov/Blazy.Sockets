@@ -10,7 +10,7 @@ public class UserLeftHandler : PacketHandler<UserLeftMessage>
 {
     private readonly IUserStorage _userStorage;
 
-    public UserLeftHandler(IEncoder<Packet> packetEncoder, IUserStorage userStorage) : base(packetEncoder)
+    public UserLeftHandler(IUserStorage userStorage)
     {
         _userStorage = userStorage;
     }

@@ -6,13 +6,7 @@ namespace Blazy.Sockets.Handlers;
 
 public abstract class PacketHandler<TRequest> : IPacketHandler where TRequest : notnull, new()
 {
-    private readonly IEncoder<Packet> _packetEncoder;
     protected INetworkClient Sender { get; private set; } = null!;
-
-    protected PacketHandler(IEncoder<Packet> packetEncoder)
-    {
-        _packetEncoder = packetEncoder;
-    }
 
     public async Task ExecuteAsync(object state, INetworkClient sender, CancellationToken ct = default)
     {

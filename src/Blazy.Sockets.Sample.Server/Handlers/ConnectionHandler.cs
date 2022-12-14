@@ -9,7 +9,7 @@ public class ConnectionHandler : PacketHandler<ConnectionDetails>
 {
     private readonly ILogger _logger;
 
-    public ConnectionHandler(IEncoder<Packet> packetEncoder, ILogger logger) : base(packetEncoder)
+    public ConnectionHandler(ILogger logger)
     {
         _logger = logger;
     }
