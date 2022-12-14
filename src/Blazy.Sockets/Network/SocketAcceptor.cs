@@ -1,6 +1,5 @@
 using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Handlers;
-using Blazy.Sockets.Logging;
 using Serilog;
 
 namespace Blazy.Sockets.Network;
@@ -53,7 +52,6 @@ public class SocketAcceptor : ISocketAcceptor
                     continue;
 
                 // TODO middlewares here
-                // _logger.HandleText($"Incoming packet from {client.RemoteEndPoint}");
 
                 var handler = _packetHandlersContainer.Resolve(request.Event);
                 
@@ -64,12 +62,10 @@ public class SocketAcceptor : ISocketAcceptor
                     continue;
                 }
                 
-                // and here
-                // _logger.HandleText($"Packet from {client.RemoteEndPoint} handled by {handler.GetType()}");
+                // log "Packet from {client.RemoteEndPoint} handled by {handler.GetType()}"
 
+                // TODO errors middleware
                 await handler.ExecuteAsync(request.State, client, ct);
-                
-                // and maybe here
             }
         }
         catch
@@ -95,9 +91,7 @@ public class SocketAcceptor : ISocketAcceptor
     }
 
     private async Task SendErrorAsync(INetworkClient client, string message, CancellationToken ct = default)
-    {
-        _logger.Debug(message);
-                    
+    {         
         var packet = new Packet
         {
             Event = "Error",

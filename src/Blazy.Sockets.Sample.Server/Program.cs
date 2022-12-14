@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Logging;
 using Blazy.Sockets.Network;
 using Blazy.Sockets.Sample.Server.Handlers;
@@ -7,6 +8,7 @@ using HashidsNet;
 
 var builder = new NetworkBuilder();
 builder.UseDefaultLogger();
+builder.UseDefaultEncoder();
 builder.Use(new Hashids(DateTime.UtcNow.ToString(), 5));
 
 builder.Use<IChatService, ChatService>();

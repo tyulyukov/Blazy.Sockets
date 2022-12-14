@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using Blazy.Sockets.Contracts;
+using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Exceptions;
 using Blazy.Sockets.Handlers;
 using Microsoft.Extensions.Configuration;
@@ -16,33 +17,33 @@ internal class NetworkClient : INetworkClient
     private bool _connected;
     private EndPoint? _remoteEp; 
     private readonly Socket _client;
-    private readonly IEncoder<Packet> _packetEncoder;
+    private readonly IEncoder _encoder;
 
-    public NetworkClient(IConfiguration configuration, IEncoder<Packet> packetEncoder)
+    public NetworkClient(IConfiguration configuration, IEncoder encoder)
     {
         var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
         var port = configuration.GetValue<int>("Connection:Port");
 
         _connected = false;
-        _packetEncoder = packetEncoder;
+        _encoder = encoder;
         _remoteEp = new IPEndPoint(ip, port);
         _client = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
-    public NetworkClient(EndPoint remoteEp, IEncoder<Packet> packetEncoder)
+    public NetworkClient(EndPoint remoteEp, IEncoder encoder)
     {
         _connected = false;
         _remoteEp = remoteEp;
         _client = new Socket(_remoteEp.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        _packetEncoder = packetEncoder;
+        _encoder = encoder;
     }
 
-    public NetworkClient(Socket client, IEncoder<Packet> packetEncoder)
+    public NetworkClient(Socket client, IEncoder encoder)
     {
         _connected = false;
         _client = client;
         _remoteEp = _client.RemoteEndPoint;
-        _packetEncoder = packetEncoder;
+        _encoder = encoder;
     }
     
     public async Task ConnectAsync(CancellationToken ct = default)
@@ -88,7 +89,7 @@ internal class NetworkClient : INetworkClient
     {
         try
         {
-            var request = _packetEncoder.Encode(packet);
+            var request = _encoder.Encode(packet);
             _ = await _client.SendAsync(request, SocketFlags.None, ct);
         }
         catch
@@ -106,7 +107,7 @@ internal class NetworkClient : INetworkClient
 
             var buffer = new byte[1024];
             var received = await _client.ReceiveAsync(buffer, SocketFlags.None, cts.Token);
-            return _packetEncoder.Decode(buffer, received);
+            return _encoder.Decode<Packet>(buffer, received);
         }
         catch (OperationCanceledException)
         {
@@ -125,7 +126,7 @@ internal class NetworkClient : INetworkClient
         {
             var buffer = new byte[1024];
             var received = await _client.ReceiveAsync(buffer, SocketFlags.None, ct);
-            return _packetEncoder.Decode(buffer, received);
+            return _encoder.Decode<Packet>(buffer, received);
         }
         catch
         {

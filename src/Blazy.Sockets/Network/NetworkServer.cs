@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Blazy.Sockets.Contracts;
+using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Handlers;
 using Blazy.Sockets.Logging;
 using Microsoft.Extensions.Configuration;
@@ -14,10 +15,10 @@ internal class NetworkServer : INetworkServer
     private readonly IPEndPoint _ipEndPoint;
     private readonly ISocketAcceptor _socketAcceptor;
     private readonly ILogger _logger;
-    private readonly IEncoder<Packet> _packetEncoder;
+    private readonly IEncoder _encoder;
 
     public NetworkServer(IConfiguration configuration, ISocketAcceptor socketAcceptor, ILogger logger, 
-        IEncoder<Packet> packetEncoder)
+        IEncoder encoder)
     {
         var ip = IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress"));
         var port = configuration.GetValue<int>("Connection:Port");
@@ -25,17 +26,17 @@ internal class NetworkServer : INetworkServer
         _ipEndPoint = new IPEndPoint(ip, port);
         _socketAcceptor = socketAcceptor;
         _logger = logger;
-        _packetEncoder = packetEncoder;
+        _encoder = encoder;
         _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
     public NetworkServer(IPEndPoint endPoint, ISocketAcceptor socketAcceptor, ILogger logger, 
-        IEncoder<Packet> packetEncoder)
+        IEncoder encoder)
     {
         _ipEndPoint = endPoint;
         _socketAcceptor = socketAcceptor;
         _logger = logger;
-        _packetEncoder = packetEncoder;
+        _encoder = encoder;
         _listener = new Socket(_ipEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
     }
 
@@ -50,7 +51,7 @@ internal class NetworkServer : INetworkServer
 
             while (!ct.IsCancellationRequested)
             {
-                var client = new NetworkClient(await _listener.AcceptAsync(ct), _packetEncoder);
+                var client = new NetworkClient(await _listener.AcceptAsync(ct), _encoder);
                 await _socketAcceptor.AcceptSocketAsync(client, ct);
             }
         }

@@ -1,6 +1,7 @@
 using Autofac;
 using Autofac.Configuration;
 using Blazy.Sockets.Contracts;
+using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Handlers;
 using Microsoft.Extensions.Configuration;
 
@@ -83,18 +84,9 @@ public class NetworkBuilder
             .As<PacketHandler<DisconnectionDetails>>()
             .SingleInstance();
     }
-    
-    protected virtual void BeforeBuild()
-    {
-        _builder.RegisterType<JsonPacketEncoder>()
-            .As<IEncoder<Packet>>()
-            .SingleInstance()
-            .IfNotRegistered(typeof(IEncoder<Packet>));
-    }
-    
+
     public IContainer Build()
     {
-        BeforeBuild();
         return _builder.Build();
     }
 }

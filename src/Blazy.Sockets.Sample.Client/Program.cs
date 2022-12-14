@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Network;
 using Blazy.Sockets.Sample.Client;
 using Blazy.Sockets.Sample.Client.Executables;
@@ -7,6 +8,7 @@ using Blazy.Sockets.Sample.Client.Services;
 using Spectre.Console;
 
 var builder = new NetworkBuilder();
+builder.UseDefaultEncoder();
 
 builder.Use<IServerCommandParserService, ServerCommandParserService>();
 builder.Use<IUserStorage, UserStorage>();
