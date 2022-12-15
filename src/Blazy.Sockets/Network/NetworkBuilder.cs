@@ -52,6 +52,11 @@ public class NetworkBuilder
     {
         _builder.RegisterInstance(instance).AsSelf().SingleInstance();
     }
+
+    private void UseMiddleware()
+    {
+        // _middleware = 
+    }
     
     public void Use<TInterface, TInstance>(TInstance instance) where TInstance : class where TInterface : notnull
     {
