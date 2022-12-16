@@ -1,4 +1,5 @@
 using Blazy.Sockets.Contracts;
+using Blazy.Sockets.Exceptions;
 using Blazy.Sockets.Network;
 
 namespace Blazy.Sockets.Handlers;
@@ -14,19 +15,16 @@ public class RequestHandler : IRequestHandler
     
     public async Task HandleRequestAsync(Packet request, INetworkClient client, CancellationToken ct = default)
     {
-        // TODO middlewares here
-
         var handler = _packetHandlersContainer.Resolve(request.Event);
                 
         if (handler is null)
         {
-            var message = $"Handler was not found for {request.Event} event";
+            throw new HandlerWasNotFound();
+            /*var message = $"Handler was not found for {request.Event} event";
             await SendErrorAsync(client, message, ct);
-            return;
+            return;*/
         }
-                
-        // log "Packet from {client.RemoteEndPoint} handled by {handler.GetType()}"
-
+             
         await handler.ExecuteAsync(request.State, client, ct);
     }
     

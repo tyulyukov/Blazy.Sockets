@@ -6,9 +6,9 @@ namespace Blazy.Sockets.Logging;
 
 public static class SerilogExtension
 {
-    public static void UseDefaultLogger(this NetworkBuilder builder)
+    public static NetworkBuilder UseDefaultLogger(this NetworkBuilder builder)
     {
-        builder.Use<ILogger, Logger>(
+        return builder.Use<ILogger, Logger>(
             new LoggerConfiguration()
             .WriteTo.Console()
             .CreateLogger()

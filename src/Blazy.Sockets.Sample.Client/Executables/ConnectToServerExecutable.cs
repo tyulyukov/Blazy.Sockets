@@ -57,24 +57,13 @@ public class ConnectToServerExecutable : IExecutable
 
             while (!token.IsCancellationRequested)
             {
-                try
-                {
-                    if (await AuthenticateAsync(_client, username, token))
-                        break;
+                if (await AuthenticateAsync(_client, username, token))
+                    break;
 
-                    username = AnsiConsole.Prompt(
-                        new TextPrompt<string>(
-                                $"Username {username} is [red]already taken[/]. Try [green]another one[/]")
-                            .PromptStyle("green"));
-                }
-                catch (SocketDisconnectedException)
-                {
-                    throw;
-                }
-                catch (Exception exception)
-                {
-                    AnsiConsole.WriteException(exception);
-                }
+                username = AnsiConsole.Prompt(
+                    new TextPrompt<string>(
+                            $"Username {username} is [red]already taken[/]. Try [green]another one[/]")
+                        .PromptStyle("green"));
             }
             
             var executables = new IExecutable[]
@@ -127,11 +116,17 @@ public class ConnectToServerExecutable : IExecutable
             }
         }, ct);
 
-        var authenticated = response is not null && response.Event == "Authenticated";
-        
-        if (authenticated)
-            _userStorage.Authenticate(new User() { Name = username });
+        if (response is null)
+            throw new ApplicationException("Response was not received");
 
-        return authenticated;
+        if (response.Event == "Username Is Taken")
+            return false;
+
+        if (response.Event != "Authenticated")
+            throw new ApplicationException("Request was handled incorrectly");
+        
+        _userStorage.Authenticate(new User { Name = username });
+
+        return true;
     }
 }

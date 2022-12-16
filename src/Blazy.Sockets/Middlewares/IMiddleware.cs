@@ -6,5 +6,6 @@ namespace Blazy.Sockets.Middlewares;
 
 public interface IMiddleware
 {
-    Task InvokeAsync(Packet request, INetworkClient client, PacketDelegate? next, CancellationToken ct = default);
+    void SetNext(PacketDelegate next);
+    Task InvokeAsync(Packet request, INetworkClient client, CancellationToken ct = default);
 }

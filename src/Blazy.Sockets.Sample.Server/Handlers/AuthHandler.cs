@@ -31,7 +31,14 @@ public class AuthHandler : PacketHandler<AuthRequest>
 
         if (!result)
         {
-            await SendErrorAsync("Username is already taken", ct);
+            await SendResponseAsync(new Packet
+            {
+                Event = "Username Is Taken",
+                State = new
+                {
+                    request.Username
+                }
+            }, ct);
             return;
         }
         

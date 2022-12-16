@@ -1,7 +1,6 @@
 using Autofac;
 using Autofac.Configuration;
 using Blazy.Sockets.Contracts;
-using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Handlers;
 using Blazy.Sockets.Middlewares;
 using Microsoft.Extensions.Configuration;
@@ -12,8 +11,6 @@ public class NetworkBuilder
 {
     private readonly List<string> _packetHandlerEvents;
     private readonly ContainerBuilder _builder;
-
-    private PacketDelegate _middleware; 
     
     public NetworkBuilder() : this("appsettings.json") { }
 
@@ -34,36 +31,60 @@ public class NetworkBuilder
         Use<INetworkClient, NetworkClient>();
         Use<IPacketHandlersContainer, PacketHandlersContainer>();
         Use<IRequestHandler, RequestHandler>();
-        
-        // _middleware = 
+        Use<IMiddlewaresChain, MiddlewaresChain>();
     }
 
-    public void Use<TInterface, TImplementation>() where TInterface : notnull where TImplementation : TInterface
+    public NetworkBuilder Use<TInterface, TImplementation>() where TInterface : notnull where TImplementation : TInterface
     {
-        _builder.RegisterType<TImplementation>().As<TInterface>().SingleInstance();
+        _builder.
+            RegisterType<TImplementation>()
+            .As<TInterface>()
+            .SingleInstance();
+
+        return this;
     }
 
-    public void Use<TImplementation>() where TImplementation : notnull
+    public NetworkBuilder Use<TImplementation>() where TImplementation : notnull
     {
-        _builder.RegisterType<TImplementation>().AsSelf().SingleInstance();
+        _builder
+            .RegisterType<TImplementation>()
+            .AsSelf()
+            .SingleInstance();
+
+        return this;
     }
 
-    public void Use<TInstance>(TInstance instance) where TInstance : class
+    public NetworkBuilder Use<TInstance>(TInstance instance) where TInstance : class
     {
-        _builder.RegisterInstance(instance).AsSelf().SingleInstance();
+        _builder
+            .RegisterInstance(instance)
+            .AsSelf()
+            .SingleInstance();
+
+        return this;
     }
 
-    private void UseMiddleware()
+    public NetworkBuilder UseMiddleware<TMiddleware>() where TMiddleware : IMiddleware
     {
-        // _middleware = 
+        _builder
+            .RegisterType<TMiddleware>()
+            .As<IMiddleware>()
+            .SingleInstance();
+
+        return this;
     }
     
-    public void Use<TInterface, TInstance>(TInstance instance) where TInstance : class where TInterface : notnull
+    public NetworkBuilder Use<TInterface, TInstance>(TInstance instance) where TInstance : class where TInterface : notnull
     {
-        _builder.RegisterInstance(instance).As<TInterface>().SingleInstance();
+        _builder
+            .RegisterInstance(instance)
+            .As<TInterface>()
+            .SingleInstance();
+
+        return this;
     }
 
-    public void UsePacketHandler<THandler>(string eventName) where THandler : IPacketHandler
+    public NetworkBuilder UsePacketHandler<THandler>(string eventName) where THandler : IPacketHandler
     {
         if (_packetHandlerEvents.Contains(eventName))
             throw new ApplicationException($"Event handler with event name {eventName} already exists");
@@ -73,20 +94,26 @@ public class NetworkBuilder
             .SingleInstance();
 
         _packetHandlerEvents.Add(eventName);
+
+        return this;
     }
     
-    public void UseConnectionHandler<THandler>() where THandler : PacketHandler<ConnectionDetails>
+    public NetworkBuilder UseConnectionHandler<THandler>() where THandler : PacketHandler<ConnectionDetails>
     {
         _builder.RegisterType<THandler>()
             .As<PacketHandler<ConnectionDetails>>()
             .SingleInstance();
+
+        return this;
     }
 
-    public void UseDisconnectionHandler<THandler>() where THandler : PacketHandler<DisconnectionDetails>
+    public NetworkBuilder UseDisconnectionHandler<THandler>() where THandler : PacketHandler<DisconnectionDetails>
     {
         _builder.RegisterType<THandler>()
             .As<PacketHandler<DisconnectionDetails>>()
             .SingleInstance();
+
+        return this;
     }
 
     public IContainer Build()

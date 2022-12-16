@@ -1,5 +1,6 @@
 using Blazy.Sockets.Contracts;
 using Blazy.Sockets.Handlers;
+using Blazy.Sockets.Middlewares;
 
 namespace Blazy.Sockets.Network;
 public class SocketAcceptor : ISocketAcceptor
@@ -7,19 +8,19 @@ public class SocketAcceptor : ISocketAcceptor
     private readonly List<INetworkClient> _clients;
     private readonly object _threadLocker;
     private readonly IPacketHandlersContainer _packetHandlersContainer;
-    private readonly IRequestHandler _requestHandler;
+    private readonly IMiddlewaresChain _middlewares;
 
-    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, IRequestHandler requestHandler)
+    public SocketAcceptor(IPacketHandlersContainer packetHandlersContainer, IMiddlewaresChain middlewares)
     {
         _clients = new ();
         _packetHandlersContainer = packetHandlersContainer;
-        _requestHandler = requestHandler;
+        _middlewares = middlewares;
         _threadLocker = new ();
     }
 
     public async Task AcceptSocketAsync(INetworkClient socket, CancellationToken ct = default)
     {
-        var connectionDetails = new ConnectionDetails()
+        var connectionDetails = new ConnectionDetails
         {
             ConnectedAt = DateTime.Now
         };
@@ -49,7 +50,7 @@ public class SocketAcceptor : ISocketAcceptor
                 if (request is null)
                     continue;
 
-                await _requestHandler.HandleRequestAsync(request, client, ct);
+                await _middlewares.InvokeAsync(request, client, ct);
             }
         }
         catch

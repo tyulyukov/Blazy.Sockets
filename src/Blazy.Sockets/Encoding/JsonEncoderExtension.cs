@@ -4,8 +4,8 @@ namespace Blazy.Sockets.Encoding;
 
 public static class JsonEncoderExtension
 {
-    public static void UseDefaultEncoder(this NetworkBuilder builder)
+    public static NetworkBuilder UseDefaultEncoder(this NetworkBuilder builder)
     {
-        builder.Use<IEncoder, JsonEncoder>();
+        return builder.Use<IEncoder, JsonEncoder>();
     }
 }

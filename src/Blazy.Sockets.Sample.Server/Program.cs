@@ -3,6 +3,7 @@ using Blazy.Sockets.Encoding;
 using Blazy.Sockets.Logging;
 using Blazy.Sockets.Network;
 using Blazy.Sockets.Sample.Server.Handlers;
+using Blazy.Sockets.Sample.Server.Middlewares;
 using Blazy.Sockets.Sample.Server.Services;
 using HashidsNet;
 
@@ -22,6 +23,11 @@ builder.UsePacketHandler<SendMessageHandler>("Message");
 
 builder.UseConnectionHandler<ConnectionHandler>();
 builder.UseDisconnectionHandler<DisconnectionHandler>();
+
+builder.UseMiddleware<ExceptionsMiddleware>();
+builder.UseMiddleware<HandlerNotFoundMiddleware>();
+builder.UseMiddleware<MetricsMiddleware>();
+// builder.UseMiddleware<BreakingMiddleware>();
 
 await using var app = builder.Build();
 var server = app.Resolve<INetworkServer>();
