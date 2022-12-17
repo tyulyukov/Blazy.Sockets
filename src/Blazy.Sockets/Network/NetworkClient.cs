@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Blazy.Sockets.Network;
 
-internal class NetworkClient : INetworkClient
+public class NetworkClient : INetworkClient
 {
     public bool Connected => _connected;
     public EndPoint? RemoteEndPoint => _remoteEp ?? _client.RemoteEndPoint;
@@ -21,7 +21,7 @@ internal class NetworkClient : INetworkClient
     public NetworkClient(IConfiguration configuration, IEncoder encoder) : this(
         new IPEndPoint(
             IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress")),
-            configuration.GetValue<int>("Connection:Port")
+            configuration.GetValue<int>("Connection:RemotePort")
         ), encoder) { }
 
     public NetworkClient(EndPoint remoteEp, IEncoder encoder) : this(

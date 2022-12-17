@@ -14,7 +14,27 @@ Full documentation would be published soon
 
 ## Small sample of using this framework:
 
-#### 1. First, create packet handler with request dto
+#### 0. Setup your configuration file in appsettings.json for server
+```json
+{
+  "Host": {
+    "IPAddress": "0.0.0.0",
+    "Port": 8080
+  }
+}
+```
+
+#### And for client also (if the client and server are in the different projects)
+```json
+{
+  "Connection": {
+    "IPAddress": "127.0.0.1",
+    "RemotePort": 8080
+  }
+}
+```
+
+#### 1. First, create packet handler with request dto (implement your service for auth and inject it)
 ```csharp
 public class AuthRequest
 {
@@ -27,7 +47,6 @@ public class AuthHandler : PacketHandler<AuthRequest>
 
     public AuthHandler(IAuthService authService)
     {
-        _logger = logger;
         _authService = authService;
     }
 
@@ -42,35 +61,76 @@ public class AuthHandler : PacketHandler<AuthRequest>
 
         if (!authenticated)
         {
-            await SendErrorAsync("Username is already taken", ct);
+            await SendResponseAsync(new Packet
+            {
+                Event = "Username Is Taken",
+                State = new 
+                {
+                    Username = user.Name
+                }
+            }, ct);
             return;
         }
         
         await SendResponseAsync(new Packet
         {
             Event = "Authenticated",
-            State = $"Authenticated as {user.Name}"
+            State = new 
+            {
+                Username = user.Name
+            }
         }, ct);
     }
 }
 ```
 
+#### 2. Create Middleware with logging
+```csharp
+public class MetricsMiddleware : MiddlewareBase
+{
+    private readonly ILogger _logger;
 
-#### 2. Register packet handler in Program.cs
+    public MetricsMiddleware(ILogger logger)
+    {
+        _logger = logger;
+    }
+    
+    public override async Task InvokeAsync(Packet request, INetworkClient client, PacketDelegate next, CancellationToken ct = default)
+    {
+        var startDate = DateTime.UtcNow;
+        
+        await next(request, client, ct);
+        
+        var endDate = DateTime.UtcNow;
+        var elapsed = (endDate - startDate).TotalMilliseconds;
+        
+        _logger.Information("Packet for {Event} sent by {RemoteEndPoint} was handled in {ElapsedMilliseconds}ms", request.Event, client.RemoteEndPoint, elapsed);
+    }
+}
+```
+
+#### 3. Register packet handler and middleware in Program.cs
 ```csharp
 var builder = new NetworkBuilder();
 
+builder.UseDefaultLogger();
+builder.UseDefaultEncoder();
 builder.Use<IAuthService, AuthService>();
 builder.UsePacketHandler<AuthHandler>("Auth");
+builder.UseMiddleware<MetricsMiddleware>();
 
 using var app = builder.Build();
 var server = app.Resolve<INetworkServer>();
 await server.RunAsync();
 ```
 
-#### 3. Send packet with this event name. And that`s it!
+#### 4. Send packet with this event name (you can build client in another project)
 ```csharp
 var builder = new NetworkBuilder();
+
+builder.UseDefaultLogger();
+builder.UseDefaultEncoder();
+
 using var app = builder.Build();
 var client = app.Resolve<INetworkClient>();
 
@@ -86,6 +146,7 @@ var response = await client.SendAsync(new Packet
 }, ct);
 ```
 
+
+
 ## 📈 Plans for:
-- Middlewares
 - Command Parser

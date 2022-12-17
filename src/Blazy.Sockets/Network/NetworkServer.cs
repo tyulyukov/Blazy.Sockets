@@ -9,7 +9,7 @@ using Serilog;
 
 namespace Blazy.Sockets.Network;
 
-internal class NetworkServer : INetworkServer
+public class NetworkServer : INetworkServer
 {
     private readonly Socket _listener;
     private readonly IPEndPoint _ipEndPoint;
@@ -20,8 +20,8 @@ internal class NetworkServer : INetworkServer
     public NetworkServer(IConfiguration configuration, ISocketAcceptor socketAcceptor, ILogger logger, 
         IEncoder encoder) : this(
         new IPEndPoint(
-            IPAddress.Parse(configuration.GetValue<string>("Connection:IPAddress")),
-            configuration.GetValue<int>("Connection:Port")
+            IPAddress.Parse(configuration.GetValue<string>("Host:IPAddress")),
+            configuration.GetValue<int>("Host:Port")
             ), 
         socketAcceptor, logger, encoder) { }
 
